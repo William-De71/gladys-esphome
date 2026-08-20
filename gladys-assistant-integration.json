@@ -1,0 +1,157 @@
+{
+  "manifest_version": 1,
+  "type": "device",
+  "name": "ESPHome",
+  "description": {
+    "en": "Control your ESPHome devices (ESP32/ESP8266) locally, over the native API.",
+    "fr": "Pilotez vos appareils ESPHome (ESP32/ESP8266) en local, via l'API native."
+  },
+  "version": "1.0.0",
+  "docker_image": "ghcr.io/william-de71/gladys-esphome:1.0.0",
+  "gladys_version": ">=4.86.0",
+  "cover_image": "https://raw.githubusercontent.com/William-De71/gladys-esphome/master/cover.jpg",
+  "categories": ["protocols", "environment", "lighting"],
+  "transports": ["local"],
+  "network_discovery": [
+    {
+      "type": "mdns",
+      "service": "_esphomelib._tcp"
+    }
+  ],
+  "config_schema": [
+    {
+      "key": "intro",
+      "type": "section",
+      "label": {
+        "en": "Getting started",
+        "fr": "Pour commencer"
+      },
+      "description": {
+        "en": "This integration talks to your ESPHome nodes on your local network, through their native API (port 6053). Paste your encryption key below, then go to the Discover screen and run a scan: the nodes found on your network appear there with all their entities, ready to be added. No IP address to type.",
+        "fr": "Cette intégration communique avec vos nœuds ESPHome sur votre réseau local, via leur API native (port 6053). Collez votre clé de chiffrement ci-dessous, puis allez dans l'écran Découverte et lancez un scan : les nœuds trouvés sur votre réseau y apparaissent avec toutes leurs entités, prêts à être ajoutés. Aucune adresse IP à saisir."
+      },
+      "links": [
+        {
+          "url": "https://esphome.io/components/api.html",
+          "label": {
+            "en": "ESPHome native API documentation",
+            "fr": "Documentation de l'API native ESPHome"
+          }
+        }
+      ]
+    },
+    {
+      "key": "encryption_key",
+      "type": "secret",
+      "label": {
+        "en": "Encryption key",
+        "fr": "Clé de chiffrement"
+      },
+      "description": {
+        "en": "The base64 key declared under `api: encryption: key:` in your ESPHome YAML. Used for every node that has no specific key below. Leave empty only if your nodes have no encryption.",
+        "fr": "La clé base64 déclarée sous `api: encryption: key:` dans votre YAML ESPHome. Utilisée pour tous les nœuds n'ayant pas de clé spécifique ci-dessous. À laisser vide uniquement si vos nœuds n'ont pas de chiffrement."
+      },
+      "placeholder": {
+        "en": "kBv1s2f...=",
+        "fr": "kBv1s2f...="
+      },
+      "required": false
+    },
+    {
+      "key": "advanced",
+      "type": "section",
+      "label": {
+        "en": "Nodes with a different key",
+        "fr": "Nœuds avec une clé différente"
+      },
+      "description": {
+        "en": "Fill the two fields below only if some nodes do not share the key above, or if a node is not found by the network scan (another VLAN, mDNS filtered by your router).",
+        "fr": "Ne remplissez les deux champs ci-dessous que si certains nœuds ne partagent pas la clé ci-dessus, ou si un nœud n'est pas trouvé par le scan réseau (autre VLAN, mDNS filtré par votre routeur)."
+      }
+    },
+    {
+      "key": "encryption_keys",
+      "type": "secret",
+      "label": {
+        "en": "Keys per node",
+        "fr": "Clés par nœud"
+      },
+      "description": {
+        "en": "One node per line, in the form `node|key`. The node name is the one from your ESPHome YAML (`esphome: name:`), or its address. These keys take precedence over the key above.",
+        "fr": "Un nœud par ligne, sous la forme `nœud|clé`. Le nom du nœud est celui de votre YAML ESPHome (`esphome: name:`), ou son adresse. Ces clés sont prioritaires sur la clé ci-dessus."
+      },
+      "placeholder": {
+        "en": "salon|kBv1s2f...=\nkitchen|9xQm4Zt...=",
+        "fr": "salon|kBv1s2f...=\ncuisine|9xQm4Zt...="
+      },
+      "required": false
+    },
+    {
+      "key": "nodes",
+      "type": "string",
+      "label": {
+        "en": "Nodes added by hand",
+        "fr": "Nœuds ajoutés à la main"
+      },
+      "description": {
+        "en": "One address per line (`salon.local`, `192.168.1.42`, or `192.168.1.42:6053`), for the nodes the network scan does not find. Nodes found by the scan need nothing here.",
+        "fr": "Une adresse par ligne (`salon.local`, `192.168.1.42`, ou `192.168.1.42:6053`), pour les nœuds que le scan réseau ne trouve pas. Les nœuds trouvés par le scan n'ont rien à faire ici."
+      },
+      "placeholder": {
+        "en": "salon.local\n192.168.1.42:6053",
+        "fr": "salon.local\n192.168.1.42:6053"
+      },
+      "required": false
+    },
+    {
+      "key": "scan_duration",
+      "type": "number",
+      "label": {
+        "en": "Discovery duration (s)",
+        "fr": "Durée de la découverte (s)"
+      },
+      "description": {
+        "en": "How long the mDNS scan listens for ESPHome nodes on the network.",
+        "fr": "Durée pendant laquelle le scan mDNS écoute les nœuds ESPHome sur le réseau."
+      },
+      "required": false,
+      "default": 8,
+      "min": 3,
+      "max": 30
+    },
+    {
+      "key": "connection_timeout",
+      "type": "number",
+      "label": {
+        "en": "Connection timeout (s)",
+        "fr": "Délai d'attente de connexion (s)"
+      },
+      "description": {
+        "en": "How long to wait for a node to answer before giving up on it.",
+        "fr": "Temps d'attente pour qu'un nœud réponde avant de l'abandonner."
+      },
+      "required": false,
+      "default": 10,
+      "min": 5,
+      "max": 60
+    }
+  ],
+  "actions": [
+    {
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion"
+      },
+      "timeout_seconds": 60
+    },
+    {
+      "key": "reconnect",
+      "label": {
+        "en": "Reconnect the nodes",
+        "fr": "Reconnecter les nœuds"
+      },
+      "timeout_seconds": 60
+    }
+  ]
+}
