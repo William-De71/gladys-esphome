@@ -278,7 +278,7 @@ export async function publishEntityState(gladys, nodeName, entity, event) {
  * @param {object} manager - The EsphomeManager instance.
  * @param {object} device - The Gladys device.
  * @param {object} feature - The Gladys feature being actioned.
- * @param {number} value - The requested value.
+ * @param {number|string} value - The requested value (a string for a text feature).
  * @returns {Promise<void>} Resolves once the command is sent.
  * @example
  * await setDeviceValue(gladys, manager, device, feature, 1);

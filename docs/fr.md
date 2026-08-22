@@ -10,7 +10,8 @@ Contrairement à un appareil du commerce, un nœud ESPHome expose exactement ce 
 | ----------------- | ----------------------------------------------------------------- |
 | `sensor`          | Capteur numérique (température, humidité, puissance, batterie...) |
 | `binary_sensor`   | Capteur binaire (mouvement, ouverture, présence, fuite, fumée...) |
-| `text_sensor`     | Capteur texte                                                     |
+| `text_sensor`     | Capteur texte (lecture seule)                                     |
+| `text`            | Texte modifiable : envoyer un message au nœud (écran)             |
 | `switch`          | Interrupteur (on/off)                                             |
 | `light`           | Lampe : on/off, luminosité, couleur, température de couleur       |
 | `cover`           | Volet ou rideau : ouvrir, fermer, arrêter, position               |

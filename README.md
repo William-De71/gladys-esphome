@@ -10,7 +10,8 @@ Built on the [Gladys integration SDK](https://github.com/GladysAssistant/integra
 | --------------- | ------------------------------------------------- |
 | `sensor`        | Numeric sensor, categorized by its `device_class` |
 | `binary_sensor` | Binary sensor, categorized by its `device_class`  |
-| `text_sensor`   | Text feature                                      |
+| `text_sensor`   | Text feature (read-only)                          |
+| `text`          | Writable text: send a message to a node (display) |
 | `switch`        | Binary switch                                     |
 | `light`         | On/off, brightness, color, color temperature      |
 | `cover`         | State (open/close/stop) + position                |

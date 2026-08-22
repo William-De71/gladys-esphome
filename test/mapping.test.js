@@ -168,6 +168,7 @@ test('every category/type pair the mapping can emit exists in the Gladys front',
     ...BINARY_DEVICE_CLASSES.map((deviceClass) => ({ type: 'binary_sensor', deviceClass })),
     { type: 'binary_sensor' },
     { type: 'text_sensor' },
+    { type: 'text' },
     { type: 'switch' },
     { type: 'button' },
     { type: 'light', supportedColorModes: [47] },
@@ -251,4 +252,19 @@ test('the mapping table covers the device_classes this test walks', () => {
   for (const deviceClass of Object.keys(SENSOR_DEVICE_CLASSES)) {
     assert.ok(source.includes(`${deviceClass}:`), `${deviceClass} is no longer in mapping.js`);
   }
+});
+
+test('a text entity is writable, unlike the read-only text_sensor', () => {
+  // ESPHome has two text types and the difference is the whole point here:
+  // `text_sensor` reports, `text` accepts. Only the second one lets Gladys
+  // push a line to a node (a message an e-ink `display:` lambda renders).
+  const [sensor] = describeEntity({ type: 'text_sensor' });
+  const [input] = describeEntity({ type: 'text' });
+
+  assert.equal(sensor.readOnly, true);
+  assert.equal(input.readOnly, false);
+  // Both land on the same Gladys pair: the direction is what differs.
+  assert.equal(input.category, sensor.category);
+  assert.equal(input.type, sensor.type);
+  assert.equal(input.key, 'state');
 });

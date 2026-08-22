@@ -325,6 +325,22 @@ export function describeEntity(entity) {
         },
       ];
 
+    case 'text':
+      return [
+        {
+          key: 'state',
+          // The writable counterpart of `text_sensor`: ESPHome accepts a free
+          // string here (TextCommandRequest), which is what lets Gladys push a
+          // line of text to a node — the message a `display:` lambda renders.
+          readOnly: false,
+          keepHistory: true,
+          category: DEVICE_FEATURE_CATEGORIES.TEXT,
+          type: TEXT.TEXT,
+          min: 0,
+          max: 0,
+        },
+      ];
+
     case 'switch':
       return [
         {

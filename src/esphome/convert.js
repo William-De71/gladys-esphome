@@ -236,12 +236,21 @@ export function readCoverState(event) {
 /**
  * Build the ESPHome command payload applying a Gladys value to a feature.
  * @param {object} feature - The Gladys feature (its `key` drives the write).
- * @param {number} value - The value Gladys asks for.
+ * @param {number|string} value - The value Gladys asks for (a string for a text feature).
  * @returns {object|null} The command payload, or null if not commandable.
  * @example
  * writeCommand({ key: 'brightness' }, 50); // { state: true, brightness: 0.5 }
+ * @example
+ * writeCommand({ key: 'state', category: 'text' }, 'Hello'); // { state: 'Hello' }
  */
 export function writeCommand(feature, value) {
+  // A text feature is the one case Gladys commands with a STRING, not a number
+  // (see the SDK's onSetValue contract). Coercing it through Number() below
+  // would turn "Poubelles demain" into NaN, so it is resolved before that.
+  if (feature.category === DEVICE_FEATURE_CATEGORIES.TEXT && feature.key === 'state') {
+    return { state: value === undefined || value === null ? '' : String(value) };
+  }
+
   const numeric = Number(value);
 
   switch (feature.key) {

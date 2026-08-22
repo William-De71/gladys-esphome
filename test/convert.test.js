@@ -106,3 +106,26 @@ test('a fan speed is scaled against the levels the firmware declares', () => {
 test('a feature with no write mapping is reported, not silently ignored', () => {
   assert.equal(writeCommand({ key: 'current_temperature' }, 20), null);
 });
+
+test('a text command is sent as a string, not coerced to a number', () => {
+  // The SDK hands a STRING for a text feature. Passing it through Number()
+  // would send NaN to the node, so the text branch runs before that coercion —
+  // this is the case that makes an ESPHome `display:` lambda show a message.
+  const text = { key: 'state', category: DEVICE_FEATURE_CATEGORIES.TEXT };
+  assert.deepEqual(writeCommand(text, 'Poubelles jaunes demain'), {
+    state: 'Poubelles jaunes demain',
+  });
+  // A digits-only message stays a string: ESPHome expects a string field here.
+  assert.deepEqual(writeCommand(text, '42'), { state: '42' });
+  // Clearing the screen is a legitimate command, not a missing value.
+  assert.deepEqual(writeCommand(text, ''), { state: '' });
+  assert.deepEqual(writeCommand(text, null), { state: '' });
+});
+
+test('a text feature round-trips: what is written reads back identically', () => {
+  const text = { key: 'state', category: DEVICE_FEATURE_CATEGORIES.TEXT };
+  const message = 'Bonjour';
+  const command = writeCommand(text, message);
+  // The node echoes its new state back on the same `state` field.
+  assert.deepEqual(readState(text, { state: command.state }), { text: message });
+});
