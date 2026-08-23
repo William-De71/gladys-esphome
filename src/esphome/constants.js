@@ -35,3 +35,10 @@ export const PARAM_VERSION = 'ESPHOME_VERSION';
 // `poll_frequency` is declared on the features (see convert.js).
 export const RECONNECT_INITIAL_DELAY_MS = 5000;
 export const RECONNECT_MAX_DELAY_MS = 300000;
+
+// Number of retries `openEspHomeClient` may spend on ONE connection attempt.
+// The library defaults to 3 (so 4 sockets), which is exactly the number of API
+// clients the default ESPHome firmware accepts: a single failing scan would
+// saturate the node and get every later attempt rejected. 1 retry (2 sockets)
+// still absorbs a node that is rebooting, and leaves it room to answer.
+export const CONSTRUCTION_RETRIES = 1;

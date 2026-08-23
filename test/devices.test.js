@@ -7,6 +7,7 @@ import {
   buildDevice,
   discoverNodes,
   publishEntityState,
+  buildDiscoveredDevices,
 } from '../src/devices.js';
 import { normalizeConfig } from '../src/config.js';
 import { fakeGladys } from './helpers/fakeGladys.js';
@@ -154,4 +155,25 @@ test('a state for a device the user never created publishes nothing', async () =
     { state: true },
   );
   assert.deepEqual(gladys.published.states, []);
+});
+
+test('a reachable node with no entity is still published, not silently dropped', async () => {
+  // The regression b3n.0 hit on real hardware: a freshly flashed node whose YAML
+  // declares api/ota/wifi but no entity yet. The handshake succeeds, so hiding
+  // the node made a working setup look exactly like a wrong key.
+  const gladys = fakeGladys({
+    scanResults: [
+      { name: 'test-esphome._esphomelib._tcp.local', addresses: ['192.168.0.39'], port: 6053 },
+    ],
+  });
+  const manager = {
+    connect: async () => ({ deviceInfo: () => ({ name: 'test-esphome' }) }),
+    listEntities: () => [],
+  };
+
+  const devices = await buildDiscoveredDevices(gladys, manager, normalizeConfig());
+
+  assert.equal(devices.length, 1);
+  assert.equal(devices[0].external_id, 'ext:ext-dev-esphome:esphome:test-esphome');
+  assert.deepEqual(devices[0].features, []);
 });

@@ -111,6 +111,10 @@ export function parseMdnsResult(result) {
  * carrying the features of all its entities. A node that refuses the connection
  * (wrong key, offline) is skipped with a log rather than failing the whole scan:
  * one unreachable node must not hide the others.
+ *
+ * A node that DID answer is always published, even when it exposes no usable
+ * feature: reaching it is the information the user needs to tell a working
+ * setup from a wrong key or an unreachable node.
  * @param {object} gladys - The Gladys SDK instance.
  * @param {object} manager - The EsphomeManager instance.
  * @param {object} config - The normalized configuration.
@@ -134,10 +138,20 @@ export async function buildDiscoveredDevices(gladys, manager, config) {
       const info = client.deviceInfo() || {};
       const name = info.name || node.name;
 
-      const device = buildDevice(gladys, { ...node, name }, manager.listEntities(name), info);
+      const entities = manager.listEntities(name);
+      const device = buildDevice(gladys, { ...node, name }, entities, info);
+
+      // A node that answered is a node the user must SEE, even with no usable
+      // feature. Hiding it turned the common "fresh YAML with no entity yet"
+      // case into a silent "no device found", indistinguishable from a wrong
+      // key or an unreachable node — the user had no way to tell that the
+      // handshake had in fact succeeded.
       if (device.features.length === 0) {
-        logger.info(`ESPHome node "${name}" exposes no entity Gladys can use`);
-        continue;
+        logger.info(
+          `ESPHome node "${name}" (${node.host}:${node.port || DEFAULT_PORT}) is reachable but ` +
+            `exposes no feature Gladys can use (${entities.length} entity(ies) seen): ` +
+            `declare an entity (switch, sensor…) in its YAML`,
+        );
       }
       devices.push(device);
     } catch (e) {

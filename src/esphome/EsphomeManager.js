@@ -16,7 +16,12 @@
 
 import { openEspHomeClient, entityId } from 'esphome-client';
 import { createLogger } from '@gladysassistant/integration-sdk';
-import { DEFAULT_PORT, RECONNECT_INITIAL_DELAY_MS, RECONNECT_MAX_DELAY_MS } from './constants.js';
+import {
+  DEFAULT_PORT,
+  RECONNECT_INITIAL_DELAY_MS,
+  RECONNECT_MAX_DELAY_MS,
+  CONSTRUCTION_RETRIES,
+} from './constants.js';
 
 const logger = createLogger({ name: 'esphome-manager' });
 
@@ -109,6 +114,13 @@ export class EsphomeManager {
       // what an ESPHome node without `api: encryption:` expects.
       psk: encryptionKey || null,
       connectTimeoutMs: timeoutSeconds * 1000,
+      // An ESPHome node accepts a HANDFUL of simultaneous API clients (4 on the
+      // default firmware). The library's default construction retry is 1 try + 3
+      // retries, which on its own burns that entire budget on a single failing
+      // scan: the node then answers "Max connections (4), rejecting" and stays
+      // unreachable until it frees the sockets. One retry is enough to absorb a
+      // node that is merely rebooting, without ever monopolising it.
+      maxConstructionRetries: CONSTRUCTION_RETRIES,
       reconnect: {
         initialDelayMs: RECONNECT_INITIAL_DELAY_MS,
         maxDelayMs: RECONNECT_MAX_DELAY_MS,
