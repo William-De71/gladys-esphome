@@ -1,6 +1,8 @@
 # gladys-esphome
 
-External [Gladys Assistant](https://gladysassistant.com) integration to control your **ESPHome** devices (ESP32 / ESP8266) over the local network, through the ESPHome native API.
+Gladys Assistant external integration for **ESPHome** devices (ESP32 / ESP8266), over the local native API.
+
+Installable in one click from [Gladys Assistant](https://gladysassistant.com), it talks to your nodes directly on your local network, through the ESPHome native API (port 6053) — no cloud, and no MQTT broker to run. Nodes are found by mDNS discovery and their entities are mapped to Gladys features automatically.
 
 Built on the [Gladys integration SDK](https://github.com/GladysAssistant/integration-sdk-js), from the [official template](https://github.com/GladysAssistant/integration-template-js).
 
@@ -91,3 +93,13 @@ In GitHub: **Actions → Release → Run workflow**, pick `patch` / `minor` / `m
 ## Credits
 
 Speaks the ESPHome native API through [`esphome-client`](https://github.com/hjdhjd/esphome-client), a zero-dependency implementation including the Noise handshake.
+
+## Repository topics
+
+Set these as the repository topics on GitHub (**About → ⚙️ → Topics**), so the integration surfaces in the searches people actually run:
+
+```
+gladys  gladys-assistant  esphome  esp32  esp8266  home-automation  domotique  smart-home  iot  nodejs
+```
+
+The GitHub **About** description mirrors the first line of this README and the `description` field of `gladys-assistant-integration.json` — keep the three in sync when one changes.
