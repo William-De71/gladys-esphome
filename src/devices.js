@@ -18,6 +18,8 @@ import {
   DEFAULT_PORT,
   PARAM_ADDRESS,
   PARAM_VERSION,
+  STATE_FLUSH_DELAY_MS,
+  MAX_STATES_PER_REQUEST,
 } from './esphome/constants.js';
 import { resolveEncryptionKey } from './config.js';
 
@@ -282,8 +284,105 @@ export async function publishEntityState(gladys, nodeName, entity, event) {
   });
 
   if (states.length > 0) {
-    await gladys.publishStates(states);
+    await enqueueStates(gladys, states);
   }
+}
+
+// --- State batching ----------------------------------------------------------
+// ESPHome pushes one event PER ENTITY, and publishing each one on arrival meant
+// one HTTP request per entity. A node reporting a dozen entities several times a
+// second (an mmWave sensor tracking targets) exhausted the core's states rate
+// limit, which answered "Too Many Requests" and dropped the states.
+//
+// States are therefore collected over a short window and sent together. The
+// buffer is keyed by feature external id, so a feature that changes twice in the
+// same window is sent ONCE, with its latest value — the intermediate value is
+// already stale by the time the window closes, and history keeps the reading
+// that actually held.
+
+/** Pending states, keyed by feature external id (latest value wins). */
+const pendingStates = new Map();
+/** @type {NodeJS.Timeout|null} Timer of the flush in flight. */
+let flushTimer = null;
+/** @type {Promise<void>|null} Flush currently running, to serialize the sends. */
+let flushInFlight = null;
+
+/**
+ * Queue states for the next flush, replacing any pending value of the same
+ * feature. Resolves as soon as the states are queued — the send itself happens
+ * on the flush, whose failures are logged there.
+ * @param {object} gladys - The Gladys SDK instance.
+ * @param {object[]} states - The states to publish.
+ * @returns {Promise<void>} Resolves once queued.
+ * @example
+ * await enqueueStates(gladys, [{ device_feature_external_id: id, state: 21.5 }]);
+ */
+async function enqueueStates(gladys, states) {
+  states.forEach((state) => {
+    pendingStates.set(state.device_feature_external_id, state);
+  });
+
+  if (flushTimer) {
+    return;
+  }
+  flushTimer = setTimeout(() => {
+    flushTimer = null;
+    // Chain onto the flush in flight: two overlapping `publishStates` calls
+    // would race, and the rate limit is exactly what we are trying to respect.
+    flushInFlight = Promise.resolve(flushInFlight)
+      .then(() => flushPendingStates(gladys))
+      .catch(() => {});
+  }, STATE_FLUSH_DELAY_MS);
+  // The timer must not keep the process alive on its own: a pending flush is
+  // never a reason to delay a shutdown.
+  if (typeof flushTimer.unref === 'function') {
+    flushTimer.unref();
+  }
+}
+
+/**
+ * Send every pending state, in batches the SDK accepts.
+ * @param {object} gladys - The Gladys SDK instance.
+ * @returns {Promise<void>} Resolves once every batch is sent.
+ * @example
+ * await flushPendingStates(gladys);
+ */
+async function flushPendingStates(gladys) {
+  if (pendingStates.size === 0) {
+    return;
+  }
+  const states = [...pendingStates.values()];
+  pendingStates.clear();
+
+  for (let i = 0; i < states.length; i += MAX_STATES_PER_REQUEST) {
+    const batch = states.slice(i, i + MAX_STATES_PER_REQUEST);
+    try {
+      await gladys.publishStates(batch);
+    } catch (e) {
+      // A failed batch is dropped rather than retried: ESPHome pushes states
+      // continuously, so the next event carries a fresher value than the one we
+      // would be replaying — and retrying into a rate limit makes it worse.
+      logger.warn(`Publishing ${batch.length} state(s) failed: ${e.message}`);
+      logger.debug(e);
+    }
+  }
+}
+
+/**
+ * Flush the pending states immediately (used on shutdown, so the last readings
+ * are not lost with the process).
+ * @param {object} gladys - The Gladys SDK instance.
+ * @returns {Promise<void>} Resolves once flushed.
+ * @example
+ * await flushStates(gladys);
+ */
+export async function flushStates(gladys) {
+  if (flushTimer) {
+    clearTimeout(flushTimer);
+    flushTimer = null;
+  }
+  await Promise.resolve(flushInFlight).catch(() => {});
+  await flushPendingStates(gladys);
 }
 
 /**

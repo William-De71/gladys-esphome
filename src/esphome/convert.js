@@ -196,7 +196,22 @@ function readMainState(feature, event) {
   if (typeof event.state === 'boolean') {
     return event.state ? 1 : 0;
   }
-  return Number(event.state);
+
+  // A firmware reports "no reading" as a non-finite float, not through
+  // `missingState`: an mmWave node publishes `nan` on the angle and distance of
+  // every target slot it is not currently tracking. `Number()` propagates that
+  // as NaN, JSON.stringify turns it into `null`, and the core then rejects the
+  // whole batch with `must have a numeric "state"` — on repeat, since the node
+  // keeps republishing it. It is the same "measurement that never happened" as
+  // missingState above, so it gets the same answer: publish nothing.
+  //
+  // `null` and `''` are coerced to 0 by Number(), which would fabricate a
+  // reading just as surely; they are rejected here rather than recorded.
+  if (event.state === null || event.state === '') {
+    return undefined;
+  }
+  const numeric = Number(event.state);
+  return Number.isFinite(numeric) ? numeric : undefined;
 }
 
 /**

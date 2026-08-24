@@ -33,6 +33,34 @@ test('a missing state publishes nothing instead of a fabricated zero', () => {
   assert.equal(value, undefined);
 });
 
+test('a non-finite reading publishes nothing instead of a rejected NaN', () => {
+  // An mmWave node reports `nan` on the angle/distance of every target slot it
+  // is not tracking. Number() propagates that as NaN, JSON.stringify turns it
+  // into `null`, and the core rejects the batch with `must have a numeric
+  // "state"` — repeatedly, since the node keeps pushing it.
+  const feature = { key: 'state', category: DEVICE_FEATURE_CATEGORIES.UNKNOWN };
+  assert.equal(readState(feature, { state: NaN }), undefined);
+  assert.equal(readState(feature, { state: 'nan' }), undefined);
+  assert.equal(readState(feature, { state: Infinity }), undefined);
+  assert.equal(readState(feature, { state: -Infinity }), undefined);
+});
+
+test('null and an empty reading do not become a fabricated zero', () => {
+  // Number(null) and Number('') are both 0, which would record a measurement
+  // that never happened.
+  const feature = { key: 'state', category: DEVICE_FEATURE_CATEGORIES.UNKNOWN };
+  assert.equal(readState(feature, { state: null }), undefined);
+  assert.equal(readState(feature, { state: '' }), undefined);
+});
+
+test('a real reading still gets through, zero included', () => {
+  // The guard above must not swallow legitimate values: 0 is a measurement.
+  const feature = { key: 'state', category: DEVICE_FEATURE_CATEGORIES.UNKNOWN };
+  assert.equal(readState(feature, { state: -11.809355735778809 }), -11.809355735778809);
+  assert.equal(readState(feature, { state: 0 }), 0);
+  assert.equal(readState(feature, { state: '42.5' }), 42.5);
+});
+
 test('a text state uses the dedicated Gladys text shape', () => {
   const value = readState(
     { key: 'state', category: DEVICE_FEATURE_CATEGORIES.TEXT },

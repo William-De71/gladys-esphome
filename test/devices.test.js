@@ -7,6 +7,7 @@ import {
   buildDevice,
   discoverNodes,
   publishEntityState,
+  flushStates,
   buildDiscoveredDevices,
 } from '../src/devices.js';
 import { normalizeConfig } from '../src/config.js';
@@ -138,11 +139,106 @@ test('a pushed state reaches only the features the user actually created', async
 
   const entity = { id: 'light-lamp', type: 'light', objectId: 'lamp', supportedColorModes: [35] };
   await publishEntityState(gladys, 'salon', entity, { state: true, brightness: 0.5 });
+  // States are batched over a short window: close it before asserting.
+  await flushStates(gladys);
 
   // The light exposes brightness too, but the user only created the state
   // feature: publishing the rest would be rejected.
   assert.deepEqual(gladys.published.states, [
     { device_feature_external_id: `${deviceExternalId}:light-lamp:state`, state: 1 },
+  ]);
+});
+
+test('states pushed in the same window leave in ONE request', async () => {
+  // ESPHome pushes one event per entity. Publishing each on arrival meant one
+  // HTTP call per entity, which exhausted the core rate limit ("Too Many
+  // Requests") on a node reporting many entities at once.
+  const deviceExternalId = 'ext:ext-dev-esphome:esphome:salon';
+  const gladys = fakeGladys({
+    devices: [
+      {
+        external_id: deviceExternalId,
+        features: [
+          { external_id: `${deviceExternalId}:sensor-angle:state` },
+          { external_id: `${deviceExternalId}:sensor-count:state` },
+        ],
+      },
+    ],
+  });
+
+  let requests = 0;
+  const publishStates = gladys.publishStates;
+  gladys.publishStates = async (states) => {
+    requests += 1;
+    return publishStates(states);
+  };
+
+  const angle = { id: 'sensor-angle', type: 'sensor', objectId: 'angle' };
+  const count = { id: 'sensor-count', type: 'sensor', objectId: 'count' };
+  await publishEntityState(gladys, 'salon', angle, { state: -11.8 });
+  await publishEntityState(gladys, 'salon', count, { state: 1 });
+  await flushStates(gladys);
+
+  assert.equal(requests, 1);
+  assert.deepEqual(gladys.published.states, [
+    { device_feature_external_id: `${deviceExternalId}:sensor-angle:state`, state: -11.8 },
+    { device_feature_external_id: `${deviceExternalId}:sensor-count:state`, state: 1 },
+  ]);
+});
+
+test('a feature changing twice in one window is sent once, with its latest value', async () => {
+  // The intermediate value is already stale when the window closes; history
+  // keeps the reading that actually held.
+  const deviceExternalId = 'ext:ext-dev-esphome:esphome:salon';
+  const gladys = fakeGladys({
+    devices: [
+      {
+        external_id: deviceExternalId,
+        features: [{ external_id: `${deviceExternalId}:sensor-angle:state` }],
+      },
+    ],
+  });
+
+  const angle = { id: 'sensor-angle', type: 'sensor', objectId: 'angle' };
+  await publishEntityState(gladys, 'salon', angle, { state: 1 });
+  await publishEntityState(gladys, 'salon', angle, { state: 2 });
+  await publishEntityState(gladys, 'salon', angle, { state: 3 });
+  await flushStates(gladys);
+
+  assert.deepEqual(gladys.published.states, [
+    { device_feature_external_id: `${deviceExternalId}:sensor-angle:state`, state: 3 },
+  ]);
+});
+
+test('a batch the core rejects does not take the next states down with it', async () => {
+  // Retrying into a rate limit makes it worse, and ESPHome pushes continuously:
+  // the next event carries a fresher value than any replay would.
+  const deviceExternalId = 'ext:ext-dev-esphome:esphome:salon';
+  const gladys = fakeGladys({
+    devices: [
+      {
+        external_id: deviceExternalId,
+        features: [{ external_id: `${deviceExternalId}:sensor-angle:state` }],
+      },
+    ],
+  });
+
+  gladys.publishStates = async () => {
+    throw new Error('Too Many Requests');
+  };
+  const angle = { id: 'sensor-angle', type: 'sensor', objectId: 'angle' };
+  await publishEntityState(gladys, 'salon', angle, { state: 1 });
+  await flushStates(gladys);
+
+  // The failure is swallowed (logged, not thrown) and the buffer is drained, so
+  // a later state still publishes normally.
+  const published = [];
+  gladys.publishStates = async (states) => published.push(...states);
+  await publishEntityState(gladys, 'salon', angle, { state: 2 });
+  await flushStates(gladys);
+
+  assert.deepEqual(published, [
+    { device_feature_external_id: `${deviceExternalId}:sensor-angle:state`, state: 2 },
   ]);
 });
 

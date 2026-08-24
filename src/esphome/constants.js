@@ -36,6 +36,18 @@ export const PARAM_VERSION = 'ESPHOME_VERSION';
 export const RECONNECT_INITIAL_DELAY_MS = 5000;
 export const RECONNECT_MAX_DELAY_MS = 300000;
 
+// How long a pushed state waits before being sent, so the states arriving in
+// the same burst leave in ONE request. ESPHome pushes one event per entity, and
+// a node that reports many of them at once (an mmWave sensor tracking targets)
+// would otherwise fire one HTTP call per entity and hit the core's rate limit
+// ("Too Many Requests"). 200 ms is short enough to stay imperceptible on a
+// dashboard, long enough to collapse a burst.
+export const STATE_FLUSH_DELAY_MS = 200;
+
+// Maximum states the SDK accepts in one `publishStates` call. Anything beyond
+// is split across requests rather than rejected wholesale.
+export const MAX_STATES_PER_REQUEST = 100;
+
 // Number of retries `openEspHomeClient` may spend on ONE connection attempt.
 // The library defaults to 3 (so 4 sockets), which is exactly the number of API
 // clients the default ESPHome firmware accepts: a single failing scan would

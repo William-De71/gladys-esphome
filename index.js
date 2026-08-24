@@ -20,6 +20,7 @@ import { normalizeConfig, resolveEncryptionKey } from './src/config.js';
 import {
   buildDiscoveredDevices,
   publishEntityState,
+  flushStates,
   publishNodeTransport,
   setDeviceValue,
   parseDeviceExternalId,
@@ -34,7 +35,11 @@ let config = normalizeConfig();
 // --- State push: a node reports a change -------------------------------------
 manager.onState((nodeName, entity, event) => {
   publishEntityState(gladys, nodeName, entity, event).catch((e) => {
-    logger.warn(`Publishing a state of "${nodeName}" failed: ${e.message}`);
+    // Name the ENTITY, not just the node: a node exposes dozens of them, and a
+    // failure that only says "salon" leaves no way to tell which reading caused
+    // it — the exact dead end a user hit when an mmWave sensor kept failing.
+    const label = entity ? entity.name || entity.objectId || entity.id : 'unknown entity';
+    logger.warn(`Publishing the state of "${nodeName}"/"${label}" failed: ${e.message}`);
     logger.debug(e);
   });
 });
@@ -177,6 +182,9 @@ gladys.on('connected', async () => {
 // --- Graceful shutdown -------------------------------------------------------
 gladys.handleShutdown(async (signal) => {
   logger.info(`Received ${signal} -> graceful shutdown`);
+  // States are batched over a short window: send what is still pending before
+  // the process goes away, otherwise the last readings die with it.
+  await flushStates(gladys).catch(() => {});
   // Closing cleanly frees the API slot on each node right away: ESPHome accepts
   // a limited number of simultaneous API clients.
   await manager.disconnectAll();
