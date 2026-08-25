@@ -111,6 +111,15 @@ sensor:
 
 **Sans `device_class`, le capteur apparaît quand même**, mais dans la catégorie générique « Inconnu ». Il fonctionne, il est historisé, mais il n'aura ni icône ni catégorie spécifique. Si un de vos capteurs s'affiche ainsi, ajoutez le `device_class` correspondant dans votre YAML et relancez une découverte.
 
+Deux familles de capteurs échappent à cette règle, parce qu'ESPHome ne leur donne jamais de `device_class` — le vocabulaire de Home Assistant n'a pas de mot pour ce qu'elles mesurent. L'intégration les reconnaît à la forme de leur déclaration :
+
+| Déclaration ESPHome                    | Catégorie Gladys |
+| -------------------------------------- | ---------------- |
+| `unit_of_measurement: "°"`             | Angle            |
+| aucune unité et `accuracy_decimals: 0` | Compteur entier  |
+
+C'est le cas typique des capteurs mmWave (`ld2350`, `ld2450`…) : leurs compteurs de cibles (_Moving / Still / Presence Target Count_) arrivent en **Compteur**, et leurs angles de cible (_Target-1 Angle_) en **Angle**. Un firmware qui déclare explicitement `state_class: measurement_angle`, `total` ou `total_increasing` est classé sur cette déclaration en priorité.
+
 Les `device_class` reconnus incluent : `temperature`, `humidity`, `pressure`, `illuminance`, `battery`, `signal_strength`, `carbon_dioxide`, `pm25`, `pm10`, `power`, `energy`, `voltage`, `current`, `distance`, `moisture`, `speed`, `duration`, et pour les capteurs binaires : `motion`, `occupancy`, `door`, `window`, `smoke`, `gas`, `moisture`, `vibration`, `tamper`, `battery`, `lock`.
 
 ## Résolution de problèmes

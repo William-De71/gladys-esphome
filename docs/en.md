@@ -110,6 +110,15 @@ sensor:
 
 **Without a `device_class`, the sensor still shows up**, but under the generic "Unknown" category. It works and its history is kept, but it gets no specific icon or category. If one of your sensors appears that way, add the matching `device_class` to your YAML and run discovery again.
 
+Two families of sensors escape that rule, because ESPHome never gives them a `device_class` — Home Assistant's vocabulary has no word for what they measure. The integration recognizes them from the shape of their declaration:
+
+| ESPHome declaration                | Gladys category |
+| ---------------------------------- | --------------- |
+| `unit_of_measurement: "°"`         | Angle           |
+| no unit and `accuracy_decimals: 0` | Counter         |
+
+This is the everyday case with mmWave sensors (`ld2350`, `ld2450`…): their target counters (_Moving / Still / Presence Target Count_) land under **Counter**, and their target angles (_Target-1 Angle_) under **Angle**. A firmware that explicitly declares `state_class: measurement_angle`, `total` or `total_increasing` is classified on that declaration first.
+
 Recognized `device_class` values include: `temperature`, `humidity`, `pressure`, `illuminance`, `battery`, `signal_strength`, `carbon_dioxide`, `pm25`, `pm10`, `power`, `energy`, `voltage`, `current`, `distance`, `moisture`, `speed`, `duration`, and for binary sensors: `motion`, `occupancy`, `door`, `window`, `smoke`, `gas`, `moisture`, `vibration`, `tamper`, `battery`, `lock`.
 
 ## Troubleshooting

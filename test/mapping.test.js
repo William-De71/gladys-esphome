@@ -19,6 +19,47 @@ test('a sensor without device_class still reaches Gladys, as a generic one', () 
   assert.equal(feature.unit, 'ppm');
 });
 
+test('a sensor in degrees with no device_class is read as an angle', () => {
+  // `ld2450` publishes its target angles with a unit and an accuracy, and no
+  // device_class at all — Home Assistant's vocabulary has no word for an angle.
+  const feature = mapSensor({ unitOfMeasurement: '°', accuracyDecimals: 1 });
+  assert.equal(feature.category, DEVICE_FEATURE_CATEGORIES.ANGLE_SENSOR);
+  assert.equal(feature.type, DEVICE_FEATURE_TYPES.SENSOR.INTEGER);
+  assert.equal(feature.unit, 'degree');
+  // A signed angle: the range has to reach below zero (-11.8° is a real value).
+  assert.ok(feature.min < 0);
+});
+
+test('a unitless whole-number sensor with no device_class is read as a counter', () => {
+  // The mmWave target counters: accuracy_decimals=0, no unit, no device_class.
+  const feature = mapSensor({ accuracyDecimals: 0 });
+  assert.equal(feature.category, DEVICE_FEATURE_CATEGORIES.COUNTER_SENSOR);
+  assert.equal(feature.type, DEVICE_FEATURE_TYPES.SENSOR.INTEGER);
+});
+
+test("an explicit state_class classifies the sensor on the firmware's own word", () => {
+  // MEASUREMENT_ANGLE (4) and TOTAL_INCREASING (2) in ESPHome's SensorStateClass.
+  assert.equal(mapSensor({ stateClass: 4 }).category, DEVICE_FEATURE_CATEGORIES.ANGLE_SENSOR);
+  assert.equal(
+    mapSensor({ stateClass: 2, unitOfMeasurement: 'pulses' }).category,
+    DEVICE_FEATURE_CATEGORIES.COUNTER_SENSOR,
+  );
+});
+
+test('a unitless sensor with decimals is not mistaken for a counter', () => {
+  // An index or a ratio: whole-number accuracy is what makes a count a count.
+  const feature = mapSensor({ accuracyDecimals: 2 });
+  assert.equal(feature.category, DEVICE_FEATURE_CATEGORIES.UNKNOWN);
+});
+
+test('a device_class deliberately left unmapped is not re-read by shape', () => {
+  // `carbon_monoxide` maps to null on purpose: numeric CO has no Gladys home.
+  // The firmware already said what it measures, so it stays a generic reading
+  // rather than being reclassified as a counter by its accuracy.
+  const feature = mapSensor({ deviceClass: 'carbon_monoxide', accuracyDecimals: 0 });
+  assert.equal(feature.category, DEVICE_FEATURE_CATEGORIES.UNKNOWN);
+});
+
 test('an unknown unit yields no unit rather than an invalid one', () => {
   // The core validates `unit` against a closed enum: an invalid value would
   // have the whole feature rejected.
@@ -158,6 +199,8 @@ test('every category/type pair the mapping can emit exists in the Gladys front',
     'fan/speed',
     'thermostat/target-temperature',
     'text/text',
+    'angle-sensor/integer',
+    'counter-sensor/integer',
     'unknown/unknown',
   ]);
 
@@ -165,6 +208,10 @@ test('every category/type pair the mapping can emit exists in the Gladys front',
   const entities = [
     ...Object.keys(SENSOR_DEVICE_CLASSES).map((deviceClass) => ({ type: 'sensor', deviceClass })),
     { type: 'sensor' },
+    { type: 'sensor', unitOfMeasurement: '°', accuracyDecimals: 1 },
+    { type: 'sensor', accuracyDecimals: 0 },
+    { type: 'sensor', stateClass: 4 },
+    { type: 'sensor', stateClass: 2 },
     ...BINARY_DEVICE_CLASSES.map((deviceClass) => ({ type: 'binary_sensor', deviceClass })),
     { type: 'binary_sensor' },
     { type: 'text_sensor' },

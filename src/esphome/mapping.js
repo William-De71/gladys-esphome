@@ -9,9 +9,17 @@
 //   sensor        + device_class: temperature -> temperature-sensor / decimal
 //   binary_sensor + device_class: motion      -> motion-sensor / binary
 //
-// Without a device_class the entity still lands in Gladys, as a generic sensor
-// (`sensor/decimal`) or a generic switch — it is never dropped, because a value
-// shown under a plain name beats a value not shown at all.
+// A numeric sensor that declares NO device_class is read a second way, from the
+// shape of its declaration — its unit, its accuracy, its state_class — because
+// ESPHome publishes whole families of sensors that the Home Assistant class
+// vocabulary has no word for (an mmWave target counter, a target angle):
+//
+//   sensor + unit '°'                     -> angle-sensor / integer
+//   sensor + no unit + accuracy 0 decimals -> counter-sensor / integer
+//
+// What neither pass identifies still lands in Gladys, as a generic measurement
+// (`unknown/unknown`) or a generic switch — it is never dropped, because a
+// value shown under a plain name beats a value not shown at all.
 //
 // Pure module: no client, no SDK instance, no I/O. Everything here is a value
 // transform, which is what makes the table testable line by line.
@@ -222,10 +230,90 @@ const BINARY_SENSOR_CLASSES = {
   // to the generic on/off rendering (see mapBinarySensor).
 };
 
+// --- Sensors without a device_class -----------------------------------------
+// A large family of ESPHome sensors declares no `device_class` at all, because
+// the Home Assistant vocabulary has no entry for what they measure. The mmWave
+// components are the everyday case: `ld2450` publishes its target counters and
+// its target angles with an icon, a unit and an accuracy — and nothing else.
+//
+// Gladys DOES have a category for both, so landing them in `unknown` would be a
+// loss of meaning we can avoid. The shape of the declaration is enough to tell
+// them apart:
+//
+//   unit '°'            -> an angle    (ld2450: accuracy_decimals=1, no class)
+//   no unit, 0 decimals -> a counter   (ld2450: accuracy_decimals=0, no class)
+//
+// Both Gladys categories declare INTEGER as their only type (the front resolves
+// a label through `deviceFeatureCategory.<category>.<type>`, and `decimal` has
+// no entry under either), so that is the type used for both. Gladys stores the
+// value as reported, so an angle of -11.8 is kept intact, not truncated.
+const ANGLE_SENSOR = {
+  category: DEVICE_FEATURE_CATEGORIES.ANGLE_SENSOR,
+  type: SENSOR.INTEGER,
+  // ESPHome angles are signed and expressed in degrees; a full turn either way
+  // covers every convention a firmware might use (-180..180, 0..360).
+  min: -360,
+  max: 360,
+};
+
+const COUNTER_SENSOR = {
+  category: DEVICE_FEATURE_CATEGORIES.COUNTER_SENSOR,
+  type: SENSOR.INTEGER,
+  // A counter is unbounded by nature (a target count, a pulse total, an uptime
+  // tick). Keep the range wide rather than clamping a total that only grows.
+  min: 0,
+  max: 1000000000,
+};
+
+// ESPHome SensorStateClass (api.proto). MEASUREMENT_ANGLE is the explicit
+// declaration a firmware CAN make for an angle; TOTAL / TOTAL_INCREASING are
+// the ones a counter makes. Neither is set by `ld2450`, which is why the unit
+// and accuracy below carry most of the work — but honouring them first means a
+// firmware that IS explicit gets classified on its own word.
+const STATE_CLASS = { MEASUREMENT_ANGLE: 4, TOTAL_INCREASING: 2, TOTAL: 3 };
+
+/**
+ * Classify a numeric sensor that declares no `device_class`, from the shape of
+ * its declaration. Returns undefined when nothing identifies it, leaving it to
+ * the generic `unknown` measurement.
+ * @param {object} entity - The ESPHome entity (`stateClass`, `unitOfMeasurement`, `accuracyDecimals`).
+ * @returns {object|undefined} The category descriptor, or undefined.
+ * @example
+ * classifyUntypedSensor({ unitOfMeasurement: '°' }); // the angle descriptor
+ */
+function classifyUntypedSensor(entity) {
+  if (entity.stateClass === STATE_CLASS.MEASUREMENT_ANGLE) {
+    return ANGLE_SENSOR;
+  }
+
+  const unit = typeof entity.unitOfMeasurement === 'string' ? entity.unitOfMeasurement.trim() : '';
+
+  if (unit === '°') {
+    return ANGLE_SENSOR;
+  }
+
+  if (
+    entity.stateClass === STATE_CLASS.TOTAL_INCREASING ||
+    entity.stateClass === STATE_CLASS.TOTAL
+  ) {
+    return COUNTER_SENSOR;
+  }
+
+  // No unit and no decimals: a plain count. The two conditions matter together
+  // — a unitless value WITH decimals is a ratio or an index, not a counter, and
+  // a value with a unit is a measurement its unit already describes.
+  if (unit === '' && entity.accuracyDecimals === 0) {
+    return COUNTER_SENSOR;
+  }
+
+  return undefined;
+}
+
 /**
  * Build the Gladys feature descriptor of a numeric ESPHome `sensor` entity.
- * Falls back to a generic decimal sensor when the YAML declares no
- * `device_class`, so an unnamed measurement still reaches the dashboard.
+ * When the YAML declares no `device_class`, the shape of the declaration is
+ * read instead (see classifyUntypedSensor), and what is still unidentified
+ * falls back to a generic measurement, so it reaches the dashboard regardless.
  * @param {object} entity - The ESPHome entity (`deviceClass`, `unitOfMeasurement`…).
  * @returns {object} `{ category, type, unit?, min, max }`.
  * @example
@@ -235,6 +323,15 @@ export function mapSensor(entity) {
   const known = SENSOR_CLASSES[entity.deviceClass];
   const unit = mapUnit(entity.unitOfMeasurement);
   if (!known) {
+    // Before falling back to `unknown`, give the shape of the declaration a
+    // chance to name the sensor: ESPHome publishes angles and counters with no
+    // device_class at all, and Gladys has a category for each. A class that IS
+    // declared but deliberately unmapped (carbon_monoxide) is not re-read here:
+    // the firmware already said what it measures, and the answer was `unknown`.
+    const inferred = entity.deviceClass ? undefined : classifyUntypedSensor(entity);
+    if (inferred) {
+      return { ...inferred, unit };
+    }
     return {
       // No device_class: Gladys has a category for exactly this — an untyped
       // measurement, rendered under its own name and unit. The pair must be
