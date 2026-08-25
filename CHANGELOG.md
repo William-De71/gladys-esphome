@@ -1,3 +1,9 @@
+## [1.0.2](https://github.com/William-De71/gladys-esphome/compare/v1.0.1...v1.0.2) (2026-08-25)
+
+### Features
+
+* map ESPHome angles and counters instead of dropping them in "unknown" ([23f62d7](https://github.com/William-De71/gladys-esphome/commit/23f62d78ac3a3577498db93a0ad50b06b4622d79))
+
 ## 1.0.1 (2026-08-25)
 
 ### Features
