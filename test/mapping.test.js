@@ -84,11 +84,18 @@ test('a binary sensor maps to the category its device_class implies', () => {
 test('the categories whose state type is not "binary" are honoured', () => {
   // The Gladys front resolves a label through `<category>.<type>`, so an
   // unmatched pair would render an empty label.
-  assert.equal(
-    mapBinarySensor({ deviceClass: 'occupancy' }).type,
-    DEVICE_FEATURE_TYPES.SENSOR.PUSH,
-  );
   assert.equal(mapBinarySensor({ deviceClass: 'lock' }).type, DEVICE_FEATURE_TYPES.LOCK.BINARY);
+});
+
+test('an occupancy sensor is a binary STATE, not a push event', () => {
+  // `presence-sensor/push` is the event type: it only ever receives 1 and never
+  // falls back to 0, so a scene could not test "the room is empty". An mmWave
+  // `has_target` / `has_still_target` is a state and must stay binary.
+  ['occupancy', 'presence'].forEach((deviceClass) => {
+    const feature = mapBinarySensor({ deviceClass });
+    assert.equal(feature.category, DEVICE_FEATURE_CATEGORIES.PRESENCE_SENSOR);
+    assert.equal(feature.type, DEVICE_FEATURE_TYPES.SENSOR.BINARY);
+  });
 });
 
 test('a light only gets the features its firmware declares as supported', () => {
@@ -177,7 +184,7 @@ test('every category/type pair the mapping can emit exists in the Gladys front',
     'energy-sensor/voltage',
     'energy-sensor/current',
     'motion-sensor/binary',
-    'presence-sensor/push',
+    'presence-sensor/binary',
     'opening-sensor/binary',
     'smoke-sensor/binary',
     'co-sensor/binary',

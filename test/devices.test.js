@@ -210,6 +210,58 @@ test('a feature changing twice in one window is sent once, with its latest value
   ]);
 });
 
+test('a binary sensor toggling inside one window keeps its transitions', async () => {
+  // An mmWave `has_moving_target` going 0 -> 1 -> 0 inside one flush window is
+  // reporting a movement that HAPPENED. Collapsing it to its latest value would
+  // publish 0 after 0: the feature never appears to change and no scene can
+  // trigger on it.
+  const deviceExternalId = 'ext:ext-dev-esphome:esphome:salon';
+  const gladys = fakeGladys({
+    devices: [
+      {
+        external_id: deviceExternalId,
+        features: [{ external_id: `${deviceExternalId}:binary-motion:state` }],
+      },
+    ],
+  });
+
+  const motion = { id: 'binary-motion', type: 'binary_sensor', deviceClass: 'motion' };
+  await publishEntityState(gladys, 'salon', motion, { state: false });
+  await publishEntityState(gladys, 'salon', motion, { state: true });
+  await publishEntityState(gladys, 'salon', motion, { state: false });
+  await flushStates(gladys);
+
+  assert.deepEqual(gladys.published.states, [
+    { device_feature_external_id: `${deviceExternalId}:binary-motion:state`, state: 0 },
+    { device_feature_external_id: `${deviceExternalId}:binary-motion:state`, state: 1 },
+    { device_feature_external_id: `${deviceExternalId}:binary-motion:state`, state: 0 },
+  ]);
+});
+
+test('a binary sensor republishing the same value is still collapsed', async () => {
+  // Keeping transitions must not reopen the rate-limit hole: a node repeating
+  // the same 1 every second carries no transition to preserve.
+  const deviceExternalId = 'ext:ext-dev-esphome:esphome:salon';
+  const gladys = fakeGladys({
+    devices: [
+      {
+        external_id: deviceExternalId,
+        features: [{ external_id: `${deviceExternalId}:binary-motion:state` }],
+      },
+    ],
+  });
+
+  const motion = { id: 'binary-motion', type: 'binary_sensor', deviceClass: 'motion' };
+  await publishEntityState(gladys, 'salon', motion, { state: true });
+  await publishEntityState(gladys, 'salon', motion, { state: true });
+  await publishEntityState(gladys, 'salon', motion, { state: true });
+  await flushStates(gladys);
+
+  assert.deepEqual(gladys.published.states, [
+    { device_feature_external_id: `${deviceExternalId}:binary-motion:state`, state: 1 },
+  ]);
+});
+
 test('a batch the core rejects does not take the next states down with it', async () => {
   // Retrying into a rate limit makes it worse, and ESPHome pushes continuously:
   // the next event carries a fresher value than any replay would.

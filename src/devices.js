@@ -276,10 +276,14 @@ export async function publishEntityState(gladys, nodeName, entity, event) {
     if (value === undefined || value === null) {
       return;
     }
+    // A `binary_sensor` reports an event as much as a level: its 0 -> 1 -> 0
+    // transitions must survive the batching window (see enqueueStates), while a
+    // measurement is free to collapse to its latest reading.
+    const keepTransitions = entity.type === 'binary_sensor' && descriptor.key === 'state';
     states.push(
       typeof value === 'object'
         ? { device_feature_external_id: externalId, ...value }
-        : { device_feature_external_id: externalId, state: value },
+        : { device_feature_external_id: externalId, state: value, keepTransitions },
     );
   });
 
@@ -299,8 +303,20 @@ export async function publishEntityState(gladys, nodeName, entity, event) {
 // same window is sent ONCE, with its latest value — the intermediate value is
 // already stale by the time the window closes, and history keeps the reading
 // that actually held.
+//
+// That collapsing is right for a MEASUREMENT and wrong for a BINARY state. A
+// temperature only ever has a latest value, but an mmWave `has_moving_target`
+// that goes 0 -> 1 -> 0 inside one window is reporting a movement that HAPPENED:
+// keeping only the last value publishes 0 after 0, the feature never appears to
+// change, and no scene can trigger on it. So a binary feature whose pending
+// value differs from the incoming one is not overwritten — both are sent, in
+// order, and the transition survives the batching.
 
-/** Pending states, keyed by feature external id (latest value wins). */
+/**
+ * Pending states, keyed by feature external id. The value is an ARRAY: a
+ * measurement keeps a single entry (latest wins), a binary feature keeps the
+ * transitions it went through during the window.
+ */
 const pendingStates = new Map();
 /** @type {NodeJS.Timeout|null} Timer of the flush in flight. */
 let flushTimer = null;
@@ -319,7 +335,20 @@ let flushInFlight = null;
  */
 async function enqueueStates(gladys, states) {
   states.forEach((state) => {
-    pendingStates.set(state.device_feature_external_id, state);
+    const pending = pendingStates.get(state.device_feature_external_id);
+    if (!pending) {
+      pendingStates.set(state.device_feature_external_id, [state]);
+      return;
+    }
+    const previous = pending[pending.length - 1];
+    // Only a binary feature keeps its intermediate values, and only when the
+    // value actually changes: a node republishing the same 1 every second is
+    // still collapsed, which is what keeps the rate limit at bay.
+    if (state.keepTransitions && previous.state !== state.state) {
+      pending.push(state);
+      return;
+    }
+    pending[pending.length - 1] = state;
   });
 
   if (flushTimer) {
@@ -351,7 +380,11 @@ async function flushPendingStates(gladys) {
   if (pendingStates.size === 0) {
     return;
   }
-  const states = [...pendingStates.values()];
+  // `keepTransitions` is our own bookkeeping, not part of the state the core
+  // accepts; strip it on the way out.
+  const states = [...pendingStates.values()]
+    .flat()
+    .map(({ keepTransitions: _drop, ...state }) => state);
   pendingStates.clear();
 
   for (let i = 0; i < states.length; i += MAX_STATES_PER_REQUEST) {

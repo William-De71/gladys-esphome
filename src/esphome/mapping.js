@@ -217,6 +217,16 @@ const BINARY_SENSOR_CLASSES = {
   window: DEVICE_FEATURE_CATEGORIES.OPENING_SENSOR,
   opening: DEVICE_FEATURE_CATEGORIES.OPENING_SENSOR,
   smoke: DEVICE_FEATURE_CATEGORIES.SMOKE_SENSOR,
+  // `gas` is a COMBUSTIBLE gas detector (methane, propane, LPG — an MQ-2 on a
+  // gas line), which Home Assistant defines as its own class, separate from
+  // `smoke`. Gladys has no gas category: the neighbouring ones are `co-sensor`
+  // (a different gas, already mapped from `carbon_monoxide`) and `co2-sensor` /
+  // `voc-sensor` (numeric only). So this is a deliberate approximation, kept
+  // because the alternatives are worse: dropping the entry would fall back to
+  // `switch/binary`, downgrading a leak alarm to a plain on/off with no danger
+  // semantics at all. The cost is a leak reading "Smoke (on/off)" on the
+  // dashboard, and scenes that cannot tell the two apart — a `gas-sensor`
+  // category in the core is what would actually fix it.
   gas: DEVICE_FEATURE_CATEGORIES.SMOKE_SENSOR,
   carbon_monoxide: DEVICE_FEATURE_CATEGORIES.CO_SENSOR,
   moisture: DEVICE_FEATURE_CATEGORIES.LEAK_SENSOR,
@@ -374,18 +384,22 @@ export function mapBinarySensor(entity) {
   }
   // Gladys convention for binary sensors: the CATEGORY carries the meaning
   // (motion, opening, leak…) while the TYPE stays the generic SENSOR.BINARY.
-  // Two categories name their type differently — the Gladys front resolves
-  // labels through `deviceFeatureCategory.<category>.<type>`, so the pair has
-  // to exist there.
+  // One category names its type differently — the Gladys front resolves labels
+  // through `deviceFeatureCategory.<category>.<type>`, so the pair has to exist
+  // there.
   return { category, type: BINARY_TYPE_OVERRIDES[category] || SENSOR.BINARY, min: 0, max: 1 };
 }
 
-// Categories whose binary state is NOT declared under the `binary` type. The
-// SDK exposes no type table for `presence-sensor`, but the Gladys front
-// declares its state under `push`, and SENSOR.PUSH carries that exact value.
+// Categories whose binary state is NOT declared under the `binary` type.
+//
+// `presence-sensor` used to be listed here under SENSOR.PUSH. That was wrong:
+// the front declares BOTH types for it (`presence-sensor.push` = "Presence",
+// `presence-sensor.binary` = "Presence (binary)"), and `push` is the EVENT
+// type — a feature that only ever receives 1, with no state to come back from.
+// An mmWave `occupancy` sensor is a state, not an event: it has to fall back to
+// 0 when the room empties, or no scene can ever test "nobody is here".
 const BINARY_TYPE_OVERRIDES = {
   [DEVICE_FEATURE_CATEGORIES.LOCK]: DEVICE_FEATURE_TYPES.LOCK.BINARY,
-  [DEVICE_FEATURE_CATEGORIES.PRESENCE_SENSOR]: SENSOR.PUSH,
 };
 
 /**
