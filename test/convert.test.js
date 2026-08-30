@@ -23,6 +23,38 @@ test('a boolean state becomes the 0/1 Gladys stores', () => {
   );
 });
 
+test('a binary_sensor reporting OFF omits `state` on the wire, and reads as 0', () => {
+  // protobuf 3 does not serialize a field holding its type's default value, so
+  // a binary_sensor turning OFF sends NO `state` field and the client omits it
+  // from the event. Reading that as "nothing to publish" left a motion sensor
+  // stuck on "detected": only the ON transitions ever reached Gladys.
+  const feature = { key: 'state', category: DEVICE_FEATURE_CATEGORIES.MOTION_SENSOR };
+  assert.equal(readState(feature, { type: 'binary_sensor', key: 12 }), 0);
+  assert.equal(readState(feature, { type: 'binary_sensor', key: 12, state: false }), 0);
+  assert.equal(readState(feature, { type: 'binary_sensor', key: 12, state: true }), 1);
+});
+
+test('an explicit missingState still wins over the binary_sensor default', () => {
+  // `missingState` is the firmware's deliberate "no reading" signal; an absent
+  // `state` is merely protobuf omitting a false. The first must not be read as
+  // the second.
+  const value = readState(
+    { key: 'state', category: DEVICE_FEATURE_CATEGORIES.MOTION_SENSOR },
+    { type: 'binary_sensor', key: 12, missingState: true },
+  );
+  assert.equal(value, undefined);
+});
+
+test('a numeric sensor with no state keeps publishing nothing', () => {
+  // The absent-field default is specific to binary_sensor, whose state is a
+  // required bool. An absent float really is a missing measurement.
+  const value = readState(
+    { key: 'state', category: DEVICE_FEATURE_CATEGORIES.TEMPERATURE_SENSOR },
+    { type: 'sensor', key: 7 },
+  );
+  assert.equal(value, undefined);
+});
+
 test('a missing state publishes nothing instead of a fabricated zero', () => {
   // A disconnected probe sets `missingState`; publishing 0 would record a
   // measurement that never happened.

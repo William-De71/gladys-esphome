@@ -188,6 +188,23 @@ function readMainState(feature, event) {
     return Number(event.state) === LOCK_STATE_LOCKED ? 1 : 0;
   }
 
+  // A `binary_sensor` reporting OFF carries NO `state` field at all. protobuf 3
+  // does not serialize a field holding its type's default value, so `false`
+  // travels as an absent field, and the client — which cannot distinguish
+  // "absent" from "unset" — omits it from the event entirely. Reading that as
+  // "nothing to publish" is what left a motion sensor stuck on "detected"
+  // forever: only the ON transitions ever reached Gladys.
+  //
+  // The entity type is what makes the absence readable: a binary_sensor state
+  // is a REQUIRED bool (api.proto BinarySensorStateResponse), so for this type
+  // — and only this type — an absent `state` means false, not "unknown". A
+  // numeric sensor keeps the opposite reading, since an absent float there
+  // really is a missing measurement. `missingState` above still wins: that is
+  // the explicit "no reading" signal, and the firmware sets it deliberately.
+  if (event.type === 'binary_sensor') {
+    return event.state ? 1 : 0;
+  }
+
   if (event.state === undefined) {
     return undefined;
   }
