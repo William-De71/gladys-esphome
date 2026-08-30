@@ -1,6 +1,6 @@
 {
   "name": "gladys-esphome",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "description": "External integration to control your ESPHome devices (ESP32/ESP8266) from Gladys Assistant.",
   "type": "module",

@@ -1,3 +1,9 @@
+## [1.0.4](https://github.com/William-De71/gladys-esphome/compare/v1.0.3...v1.0.4) (2026-08-30)
+
+### Bug Fixes
+
+* read a binary_sensor OFF from the absent protobuf field ([6c72b37](https://github.com/William-De71/gladys-esphome/commit/6c72b379118a2854bbdc17862979d79180177d72))
+
 ## [1.0.3](https://github.com/William-De71/gladys-esphome/compare/v1.0.2...v1.0.3) (2026-08-30)
 
 ### Bug Fixes
