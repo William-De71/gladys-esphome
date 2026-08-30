@@ -1,3 +1,9 @@
+## [1.0.3](https://github.com/William-De71/gladys-esphome/compare/v1.0.2...v1.0.3) (2026-08-30)
+
+### Bug Fixes
+
+* make mmWave presence and motion usable in scenes ([2c3e078](https://github.com/William-De71/gladys-esphome/commit/2c3e078a3f70bb88aeb65417acd8f4cb87a1014f))
+
 ## [1.0.2](https://github.com/William-De71/gladys-esphome/compare/v1.0.1...v1.0.2) (2026-08-25)
 
 ### Features
