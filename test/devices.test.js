@@ -386,7 +386,9 @@ test('an empty mDNS scan keeps the nodes Gladys already knows', async () => {
 
 test('a fresh scan result wins over the stored address, which a DHCP lease outdates', async () => {
   const gladys = fakeGladys({
-    scanResults: [{ name: 'salon._esphomelib._tcp.local', addresses: ['192.168.1.99'], port: 6053 }],
+    scanResults: [
+      { name: 'salon._esphomelib._tcp.local', addresses: ['192.168.1.99'], port: 6053 },
+    ],
     devices: [knownDevice('salon', '192.168.1.42:6053')],
   });
 

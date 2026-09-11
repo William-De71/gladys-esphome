@@ -307,7 +307,11 @@ export async function reconnectKnownNodes(gladys, manager, config) {
       continue;
     }
     try {
-      await manager.connect(node, resolveEncryptionKey(config, node.name), config.connection_timeout);
+      await manager.connect(
+        node,
+        resolveEncryptionKey(config, node.name),
+        config.connection_timeout,
+      );
       logger.info(`ESPHome node "${node.name}" (${node.host}) reconnected`);
       reconnected += 1;
     } catch (e) {
