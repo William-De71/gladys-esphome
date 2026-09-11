@@ -1,3 +1,9 @@
+## [1.0.5](https://github.com/William-De71/gladys-esphome/compare/v1.0.4...v1.0.5) (2026-09-11)
+
+### Bug Fixes
+
+* keep a known node when the mDNS scan comes up empty ([d0b708c](https://github.com/William-De71/gladys-esphome/commit/d0b708c984a23c6cf6194fd5f7ec6f316a01de81))
+
 ## [1.0.4](https://github.com/William-De71/gladys-esphome/compare/v1.0.3...v1.0.4) (2026-08-30)
 
 ### Bug Fixes
