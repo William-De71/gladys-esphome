@@ -20,6 +20,7 @@ import {
   PARAM_VERSION,
   STATE_FLUSH_DELAY_MS,
   MAX_STATES_PER_REQUEST,
+  SCAN_RETRY_MARGIN_MS,
 } from './esphome/constants.js';
 import { resolveEncryptionKey } from './config.js';
 
@@ -31,42 +32,154 @@ const logger = createLogger({ name: 'esphome-devices' });
 let inFlightScan = null;
 
 /**
- * Discover the ESPHome nodes reachable on the network: the ones the core's mDNS
- * scan reports, plus the ones the user declared by hand. Manual entries win on
- * address, since the user typed them for a reason (a node the scan cannot see).
+ * List the nodes Gladys ALREADY knows, from the address stored on each device
+ * at discovery time (`PARAM_ADDRESS`).
+ *
+ * This is what makes a device survive a failed scan. mDNS is best-effort
+ * multicast: an ESP32 in Wi-Fi power save, an access point that filters
+ * multicast, or a scan window that closes too early all produce an empty scan.
+ * Without this source, that empty scan published ZERO device and a node the
+ * user had been using for weeks silently vanished — even though its address
+ * was sitting right there in its device params.
+ * @param {object} gladys - The Gladys SDK instance.
+ * @returns {Array<{ name: string, host: string, port: number }>} The known nodes.
+ * @example
+ * const nodes = knownNodes(gladys);
+ */
+export function knownNodes(gladys) {
+  const nodes = [];
+
+  (gladys.devices || []).forEach((device) => {
+    let name;
+    try {
+      name = parseDeviceExternalId(gladys, device.external_id);
+    } catch {
+      // A device of another integration, or an id we did not write: not ours.
+      return;
+    }
+    const param = (device.params || []).find((entry) => entry.name === PARAM_ADDRESS);
+    if (!name || !param) {
+      return;
+    }
+    const [host, port] = String(param.value).split(':');
+    if (!host) {
+      return;
+    }
+    nodes.push({ name, host, port: Number(port) || DEFAULT_PORT });
+  });
+
+  return nodes;
+}
+
+/**
+ * Run the core's mDNS scan, retrying once when the core answers that a scan is
+ * already running for this integration.
+ *
+ * That conflict is a restart artifact, not a user error: a scan holds the slot
+ * for `scan_duration`, and a container restarted mid-scan (a config update, for
+ * instance) starts a fresh process whose own scan lands inside the window the
+ * DEAD process opened. The `inFlightScan` guard is per-process and cannot see
+ * it. Waiting for the window to close and asking again is all it takes.
  * @param {object} gladys - The Gladys SDK instance.
  * @param {object} config - The normalized configuration.
+ * @param {number} [retryMarginMs] - Margin added to the wait before retrying.
+ * @returns {Promise<object[]>} The raw scan results.
+ * @example
+ * const results = await runScanWithRetry(gladys, config);
+ */
+async function runScanWithRetry(gladys, config, retryMarginMs = SCAN_RETRY_MARGIN_MS) {
+  const scan = () =>
+    gladys.scanNetwork('mdns', { timeoutSeconds: config.scan_duration }).catch(async (e) => {
+      if (!/conflict|already running/i.test(e.message || '')) {
+        throw e;
+      }
+      // The previous scan owns the slot until its own duration elapses; the
+      // margin covers the core registering the release.
+      const waitMs = config.scan_duration * 1000 + retryMarginMs;
+      logger.info(`A scan is already running: retrying in ${Math.round(waitMs / 1000)}s`);
+      await delay(waitMs);
+      return gladys.scanNetwork('mdns', { timeoutSeconds: config.scan_duration });
+    });
+
+  if (!inFlightScan) {
+    inFlightScan = scan().finally(() => {
+      inFlightScan = null;
+    });
+  }
+  return inFlightScan;
+}
+
+/**
+ * Wait for a delay. The timer is NOT unref'd: this sleep sits between a refused
+ * scan and its retry, and letting the process exit through it would silently
+ * abandon the scan that is the whole point of the wait.
+ * @param {number} ms - How long to wait.
+ * @returns {Promise<void>} Resolves once elapsed.
+ * @example
+ * await delay(1000);
+ */
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+/**
+ * Discover the ESPHome nodes to connect to, from three sources merged by
+ * priority — each one overriding the previous on the same node name:
+ *
+ *   1. the nodes Gladys already knows, by their stored address;
+ *   2. what the core's mDNS scan reports, which is fresher (a DHCP lease moves);
+ *   3. the nodes the user declared by hand, typed for a reason (a node the scan
+ *      cannot see), so they win over everything.
+ * @param {object} gladys - The Gladys SDK instance.
+ * @param {object} config - The normalized configuration.
+ * @param {number} [retryMarginMs] - Margin before retrying a refused scan; the
+ *   tests shorten it, production never passes it.
  * @returns {Promise<Array<{ name: string, host: string, port: number }>>} The nodes.
  * @example
  * const nodes = await discoverNodes(gladys, config);
  */
-export async function discoverNodes(gladys, config) {
+export async function discoverNodes(gladys, config, retryMarginMs = SCAN_RETRY_MARGIN_MS) {
   /** @type {Map<string, { name: string, host: string, port: number }>} */
   const nodes = new Map();
+
+  knownNodes(gladys).forEach((node) => {
+    nodes.set(node.name.toLowerCase(), node);
+  });
+  const knownCount = nodes.size;
 
   // Integration containers run on a bridge network and never receive mDNS
   // traffic: the core captures it for us (manifest `network_discovery`).
   try {
-    if (!inFlightScan) {
-      inFlightScan = gladys
-        .scanNetwork('mdns', { timeoutSeconds: config.scan_duration })
-        .finally(() => {
-          inFlightScan = null;
-        });
-    }
-    const results = await inFlightScan;
+    const results = await runScanWithRetry(gladys, config, retryMarginMs);
+    let scanned = 0;
     (results || []).forEach((result) => {
       const node = parseMdnsResult(result);
       if (node) {
+        scanned += 1;
         nodes.set(node.name.toLowerCase(), node);
+        return;
+      }
+      // A PTR answered but carried no usable IPv4. Staying silent here made a
+      // partial answer look exactly like no answer at all, with nothing in the
+      // logs to tell the two apart.
+      if (result && result.name) {
+        logger.debug(
+          `mDNS result "${result.name}" ignored: no routable IPv4 in ${JSON.stringify(result.addresses || [])}`,
+        );
       }
     });
-    logger.info(`mDNS scan (${MDNS_SERVICE}): ${nodes.size} ESPHome node(s) found`);
+    logger.info(`mDNS scan (${MDNS_SERVICE}): ${scanned} ESPHome node(s) found`);
   } catch (e) {
     // A Gladys without mediated discovery, or a scan rate-limited by the core:
-    // the manually declared nodes must still work.
+    // the known and manually declared nodes must still work.
     logger.warn(`mDNS scan unavailable: ${e.message}`);
     logger.debug(e);
+  }
+
+  if (knownCount > 0) {
+    logger.info(`${knownCount} node(s) already known by Gladys kept in the discovery`);
   }
 
   config.nodes.forEach((manual) => {
@@ -164,6 +277,47 @@ export async function buildDiscoveredDevices(gladys, manager, config) {
 
   logger.info(`ESPHome discovery: ${devices.length} device(s) built`);
   return devices;
+}
+
+/**
+ * Reconnect the known nodes that have no live session.
+ *
+ * The client library auto-reconnects a session it ONCE established, with its
+ * own backoff — that covers a node rebooting or dropping off the Wi-Fi. What it
+ * cannot cover is a session that never existed: a node powered off when the
+ * container started got its `connect()` rejected, and nothing retries it. This
+ * is that missing retry, and it is also what brings a node back after a scan
+ * found nothing and the address came from the device params.
+ *
+ * A node already connected is left alone — `manager.connect()` would return the
+ * existing client anyway, but not opening a second socket at all is what keeps
+ * the node's handful of API slots free.
+ * @param {object} gladys - The Gladys SDK instance.
+ * @param {object} manager - The EsphomeManager instance.
+ * @param {object} config - The normalized configuration.
+ * @returns {Promise<number>} How many nodes were reconnected.
+ * @example
+ * await reconnectKnownNodes(gladys, manager, config);
+ */
+export async function reconnectKnownNodes(gladys, manager, config) {
+  let reconnected = 0;
+
+  for (const node of knownNodes(gladys)) {
+    if (manager.getClient(node.name)) {
+      continue;
+    }
+    try {
+      await manager.connect(node, resolveEncryptionKey(config, node.name), config.connection_timeout);
+      logger.info(`ESPHome node "${node.name}" (${node.host}) reconnected`);
+      reconnected += 1;
+    } catch (e) {
+      // Still unreachable: the next tick tries again. Debug, not warn — a node
+      // the user unplugged for good must not spam a warning every minute.
+      logger.debug(`Reconnection of "${node.name}" (${node.host}) failed: ${e.message}`);
+    }
+  }
+
+  return reconnected;
 }
 
 /**

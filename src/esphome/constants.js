@@ -32,7 +32,9 @@ export const PARAM_VERSION = 'ESPHOME_VERSION';
 
 // Gladys polls devices, but ESPHome pushes its states over the native API. We
 // keep the connection open and publish on every state change, so no
-// `poll_frequency` is declared on the features (see convert.js).
+// `poll_frequency` is declared on the features — which also means Gladys never
+// calls `onPoll`, and a dropped node is brought back by the watchdog in
+// index.js rather than by a poll.
 export const RECONNECT_INITIAL_DELAY_MS = 5000;
 export const RECONNECT_MAX_DELAY_MS = 300000;
 
@@ -47,6 +49,17 @@ export const STATE_FLUSH_DELAY_MS = 200;
 // Maximum states the SDK accepts in one `publishStates` call. Anything beyond
 // is split across requests rather than rejected wholesale.
 export const MAX_STATES_PER_REQUEST = 100;
+
+// Extra wait before retrying a scan the core refused because another one is
+// already running. The previous scan holds the slot for its own duration; this
+// margin covers the core registering the release.
+export const SCAN_RETRY_MARGIN_MS = 2000;
+
+// How often the watchdog re-checks the known nodes that have no live session.
+// The client library auto-reconnects a session it once established, but a node
+// that was OFF when the container started never got one — nothing would retry
+// it without this.
+export const RECONNECT_WATCHDOG_INTERVAL_MS = 60000;
 
 // Number of retries `openEspHomeClient` may spend on ONE connection attempt.
 // The library defaults to 3 (so 4 sockets), which is exactly the number of API

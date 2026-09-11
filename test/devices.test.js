@@ -9,6 +9,8 @@ import {
   publishEntityState,
   flushStates,
   buildDiscoveredDevices,
+  knownNodes,
+  reconnectKnownNodes,
 } from '../src/devices.js';
 import { normalizeConfig } from '../src/config.js';
 import { fakeGladys } from './helpers/fakeGladys.js';
@@ -324,4 +326,148 @@ test('a reachable node with no entity is still published, not silently dropped',
   assert.equal(devices.length, 1);
   assert.equal(devices[0].external_id, 'ext:ext-dev-esphome:esphome:test-esphome');
   assert.deepEqual(devices[0].features, []);
+});
+
+// --- Surviving a failed mDNS scan --------------------------------------------
+
+/**
+ * Build a device as the integration itself would publish it, with its address.
+ * @param {string} name - The node name.
+ * @param {string} address - The `host:port` stored in PARAM_ADDRESS.
+ * @returns {object} The Gladys device.
+ * @example
+ * knownDevice('salon', '192.168.1.42:6053');
+ */
+function knownDevice(name, address) {
+  return {
+    external_id: `ext:ext-dev-esphome:esphome:${name}`,
+    params: [
+      { name: 'ADDRESS', value: address },
+      { name: 'ESPHOME_VERSION', value: '2025.8.0' },
+    ],
+  };
+}
+
+test('a device already created by Gladys yields its stored address', () => {
+  const gladys = fakeGladys({ devices: [knownDevice('salon', '192.168.1.42:6053')] });
+  assert.deepEqual(knownNodes(gladys), [{ name: 'salon', host: '192.168.1.42', port: 6053 }]);
+});
+
+test('a known device without an address, or from another integration, is skipped', () => {
+  const gladys = fakeGladys({
+    devices: [
+      { external_id: 'ext:ext-dev-esphome:esphome:salon', params: [] },
+      { external_id: 'zwave:node:3', params: [{ name: 'ADDRESS', value: '192.168.1.7:6053' }] },
+    ],
+  });
+  assert.deepEqual(knownNodes(gladys), []);
+});
+
+test('a known device falls back to the default port when none was stored', () => {
+  const gladys = fakeGladys({ devices: [knownDevice('salon', '192.168.1.42')] });
+  assert.equal(knownNodes(gladys)[0].port, 6053);
+});
+
+test('an empty mDNS scan keeps the nodes Gladys already knows', async () => {
+  // PhilippeMA's regression: an ESP unplugged for a few days came back, the scan
+  // reported nothing, and the device he had been using for weeks vanished — its
+  // address sitting unused in its own params the whole time.
+  const gladys = fakeGladys({
+    scanResults: [],
+    devices: [knownDevice('detecteur-mvts-millimetrique', '192.168.50.50:6053')],
+  });
+
+  const nodes = await discoverNodes(gladys, normalizeConfig());
+
+  assert.deepEqual(nodes, [
+    { name: 'detecteur-mvts-millimetrique', host: '192.168.50.50', port: 6053 },
+  ]);
+});
+
+test('a fresh scan result wins over the stored address, which a DHCP lease outdates', async () => {
+  const gladys = fakeGladys({
+    scanResults: [{ name: 'salon._esphomelib._tcp.local', addresses: ['192.168.1.99'], port: 6053 }],
+    devices: [knownDevice('salon', '192.168.1.42:6053')],
+  });
+
+  const nodes = await discoverNodes(gladys, normalizeConfig());
+
+  assert.equal(nodes.length, 1);
+  assert.equal(nodes[0].host, '192.168.1.99');
+});
+
+test('a scan refused because another one is running is retried, not given up on', async () => {
+  // The 409 a container restarted mid-scan walks into: the dead process still
+  // owns the slot, and the per-process guard cannot see it.
+  const gladys = fakeGladys({ devices: [] });
+  let attempts = 0;
+  gladys.scanNetwork = async () => {
+    attempts += 1;
+    if (attempts === 1) {
+      throw new Error('Conflict');
+    }
+    return [{ name: 'salon._esphomelib._tcp.local', addresses: ['192.168.1.42'], port: 6053 }];
+  };
+
+  const nodes = await discoverNodes(gladys, normalizeConfig({ scan_duration: 0 }), 0);
+
+  assert.equal(attempts, 2);
+  assert.deepEqual(nodes, [{ name: 'salon', host: '192.168.1.42', port: 6053 }]);
+});
+
+test('a scan failing for another reason is not retried', async () => {
+  const gladys = fakeGladys({ devices: [] });
+  let attempts = 0;
+  gladys.scanNetwork = async () => {
+    attempts += 1;
+    throw new Error('not supported');
+  };
+
+  await discoverNodes(gladys, normalizeConfig({ scan_duration: 0 }), 0);
+
+  assert.equal(attempts, 1);
+});
+
+test('the watchdog reconnects a known node that has no live session', async () => {
+  const gladys = fakeGladys({ devices: [knownDevice('salon', '192.168.1.42:6053')] });
+  const attempted = [];
+  const manager = {
+    getClient: () => undefined,
+    connect: async (node) => {
+      attempted.push(node);
+      return {};
+    },
+  };
+
+  const count = await reconnectKnownNodes(gladys, manager, normalizeConfig());
+
+  assert.equal(count, 1);
+  assert.deepEqual(attempted, [{ name: 'salon', host: '192.168.1.42', port: 6053 }]);
+});
+
+test('the watchdog leaves a connected node alone, sparing its API slots', async () => {
+  const gladys = fakeGladys({ devices: [knownDevice('salon', '192.168.1.42:6053')] });
+  const manager = {
+    getClient: () => ({}),
+    connect: async () => assert.fail('a connected node must not be reconnected'),
+  };
+
+  assert.equal(await reconnectKnownNodes(gladys, manager, normalizeConfig()), 0);
+});
+
+test('a node still unreachable does not take the whole watchdog tick down', async () => {
+  const gladys = fakeGladys({
+    devices: [knownDevice('eteint', '192.168.1.7:6053'), knownDevice('salon', '192.168.1.42:6053')],
+  });
+  const manager = {
+    getClient: () => undefined,
+    connect: async (node) => {
+      if (node.name === 'eteint') {
+        throw new Error('ETIMEDOUT');
+      }
+      return {};
+    },
+  };
+
+  assert.equal(await reconnectKnownNodes(gladys, manager, normalizeConfig()), 1);
 });

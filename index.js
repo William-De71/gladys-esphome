@@ -10,8 +10,9 @@
 //
 // Push model: unlike a polling integration, ESPHome nodes send their state
 // changes as they happen over a connection kept open. States therefore reach
-// Gladys from the manager's callback (`onState`), and `onPoll` only serves as a
-// safety net for a device Gladys asks to refresh explicitly.
+// Gladys from the manager's callback (`onState`), never from a poll. Keeping
+// that flow alive is the watchdog's job: the client library reconnects a
+// session it once had, and the watchdog covers the one it never got.
 // -----------------------------------------------------------------------------
 
 import { GladysIntegration, logger } from '@gladysassistant/integration-sdk';
@@ -24,8 +25,9 @@ import {
   publishNodeTransport,
   setDeviceValue,
   parseDeviceExternalId,
+  reconnectKnownNodes,
 } from './src/devices.js';
-import { PARAM_ADDRESS } from './src/esphome/constants.js';
+import { PARAM_ADDRESS, RECONNECT_WATCHDOG_INTERVAL_MS } from './src/esphome/constants.js';
 
 const gladys = new GladysIntegration();
 const manager = new EsphomeManager();
@@ -72,6 +74,43 @@ async function publishDevices() {
   return devices;
 }
 
+// --- Reconnection watchdog ---------------------------------------------------
+// The client library reconnects a session it once established, but never
+// retries a connection that failed outright — a node powered off when the
+// container started stays dead forever. This tick is that retry, and it is also
+// what brings back a node whose mDNS scan came up empty.
+/** @type {NodeJS.Timeout|null} */
+let watchdogTimer = null;
+
+/**
+ * Start the periodic reconnection of the known nodes. Idempotent: calling it
+ * twice keeps a single timer.
+ * @returns {void}
+ * @example
+ * startReconnectWatchdog();
+ */
+function startReconnectWatchdog() {
+  if (watchdogTimer) {
+    return;
+  }
+  watchdogTimer = setInterval(() => {
+    reconnectKnownNodes(gladys, manager, config)
+      .then(async (count) => {
+        // A node that came back exposes entities Gladys has no feature for yet
+        // if its YAML changed while it was away; re-publishing costs one call
+        // and keeps the device in sync.
+        if (count > 0) {
+          await publishDevices().catch(() => {});
+        }
+      })
+      .catch((e) => logger.debug(`Reconnection watchdog failed: ${e.message}`));
+  }, RECONNECT_WATCHDOG_INTERVAL_MS);
+  // Never a reason to hold the process open.
+  if (typeof watchdogTimer.unref === 'function') {
+    watchdogTimer.unref();
+  }
+}
+
 // --- Discovery: the user asks for the list of devices ------------------------
 gladys.onScanRequest(async () => {
   logger.info('onScanRequest -> discovering the ESPHome nodes');
@@ -88,6 +127,10 @@ gladys.onSetValue(async (device, feature, value) => {
 // ESPHome pushes its states, so there is nothing to fetch here. What a poll CAN
 // fix is a node whose connection dropped while Gladys kept its device: retry the
 // connection so the state flow resumes on its own.
+//
+// No feature declares a `poll_frequency`, so Gladys never calls this on its own
+// — the watchdog above is what actually reconnects a dropped node. This stays
+// wired for an explicit refresh, and costs nothing when it is never called.
 gladys.onPoll(async (device) => {
   const nodeName = parseDeviceExternalId(gladys, device.external_id);
   if (manager.getClient(nodeName)) {
@@ -101,7 +144,7 @@ gladys.onPoll(async (device) => {
   logger.info(`onPoll -> reconnecting the ESPHome node "${nodeName}"`);
   await manager
     .connect(
-      { name: nodeName, host, port: Number(port) },
+      { name: nodeName, host, port: Number(port) || undefined },
       resolveEncryptionKey(config, nodeName),
       config.connection_timeout,
     )
@@ -165,9 +208,12 @@ gladys.onConfigUpdated(async () => {
 // --- Connection lifecycle ----------------------------------------------------
 gladys.on('connected', async () => {
   try {
-    // Load the devices the user created, so a pushed state finds its feature.
+    // Load the devices the user created, so a pushed state finds its feature —
+    // and so discovery can reuse their stored addresses when a scan comes up
+    // empty (see knownNodes).
     await gladys.getDevices();
     await publishDevices();
+    startReconnectWatchdog();
   } catch (err) {
     logger.error('Post-connection initialization failed', err);
     await gladys
@@ -182,6 +228,10 @@ gladys.on('connected', async () => {
 // --- Graceful shutdown -------------------------------------------------------
 gladys.handleShutdown(async (signal) => {
   logger.info(`Received ${signal} -> graceful shutdown`);
+  if (watchdogTimer) {
+    clearInterval(watchdogTimer);
+    watchdogTimer = null;
+  }
   // States are batched over a short window: send what is still pending before
   // the process goes away, otherwise the last readings die with it.
   await flushStates(gladys).catch(() => {});
