@@ -9,6 +9,7 @@ import {
   unpackColor,
   ratioToPercent,
   percentToRatio,
+  withWireDefaults,
   COVER_STATE,
 } from '../src/esphome/convert.js';
 
@@ -45,14 +46,54 @@ test('an explicit missingState still wins over the binary_sensor default', () =>
   assert.equal(value, undefined);
 });
 
-test('a numeric sensor with no state keeps publishing nothing', () => {
-  // The absent-field default is specific to binary_sensor, whose state is a
-  // required bool. An absent float really is a missing measurement.
-  const value = readState(
-    { key: 'state', category: DEVICE_FEATURE_CATEGORIES.TEMPERATURE_SENSOR },
-    { type: 'sensor', key: 7 },
-  );
-  assert.equal(value, undefined);
+test('protobuf leaves out every field holding its default, for every entity type', () => {
+  // A state response is a full snapshot, so an absent field is false / 0, never
+  // "unknown". Reading it as "nothing to publish" is what kept a switch turned
+  // off showing ON, a plug drawing 0 W showing its last wattage, and a closed
+  // cover stuck on "closing".
+  const sw = { key: 'state', category: DEVICE_FEATURE_CATEGORIES.SWITCH };
+  assert.equal(readState(sw, { type: 'switch', key: 3 }), 0);
+  assert.equal(readState(sw, { type: 'light', key: 4 }), 0);
+  assert.equal(readState(sw, { type: 'fan', key: 5 }), 0);
+
+  const power = { key: 'state', category: DEVICE_FEATURE_CATEGORIES.ENERGY_SENSOR };
+  assert.equal(readState(power, { type: 'sensor', key: 7 }), 0);
+
+  const cover = { key: 'state', category: DEVICE_FEATURE_CATEGORIES.SHUTTER };
+  assert.equal(readState(cover, { type: 'cover', key: 8 }), COVER_STATE.CLOSED);
+  assert.equal(readState({ key: 'position' }, { type: 'cover', key: 8 }), 0);
+
+  // A pure blue light: red = 0 travels as an absent field.
+  assert.equal(readState({ key: 'color' }, { type: 'light', key: 4, blue: 1 }), 0x0000ff);
+});
+
+test('withWireDefaults leaves an event of unknown type untouched', () => {
+  const event = { type: 'not-an-esphome-type', key: 1 };
+  assert.equal(withWireDefaults(event), event);
+  assert.deepEqual(withWireDefaults({ type: 'switch', key: 1, state: true }), {
+    type: 'switch',
+    key: 1,
+    state: true,
+  });
+});
+
+test('only the two resting lock states have a Gladys value', () => {
+  // LOCKING, JAMMED… are neither locked nor unlocked; reading them as 0 would
+  // tell a scene the door is open while the bolt is moving, or stuck.
+  const lock = { key: 'state', category: DEVICE_FEATURE_CATEGORIES.LOCK };
+  assert.equal(readState(lock, { type: 'lock', state: 1 }), 1);
+  assert.equal(readState(lock, { type: 'lock', state: 2 }), 0);
+  assert.equal(readState(lock, { type: 'lock', state: 3 }), undefined);
+  assert.equal(readState(lock, { type: 'lock', state: 4 }), undefined);
+  assert.equal(readState(lock, { type: 'lock' }), undefined);
+});
+
+test('a valve reads open from its position and is driven by target position', () => {
+  const valve = { key: 'state', category: DEVICE_FEATURE_CATEGORIES.SWITCH, entityType: 'valve' };
+  assert.equal(readState(valve, { type: 'valve', position: 0.4 }), 1);
+  assert.equal(readState(valve, { type: 'valve' }), 0);
+  assert.deepEqual(writeCommand(valve, 1), { position: 1 });
+  assert.deepEqual(writeCommand(valve, 0), { position: 0 });
 });
 
 test('a missing state publishes nothing instead of a fabricated zero', () => {
@@ -123,8 +164,8 @@ test('a moving cover reports its direction, a resting one its position', () => {
   assert.equal(readCoverState({ currentOperation: 0, position: 1 }), COVER_STATE.OPEN);
 });
 
-test('a cover with no position at all publishes nothing', () => {
-  assert.equal(readCoverState({ currentOperation: 0 }), undefined);
+test('a resting cover with no position field is closed: 0 is the absent value', () => {
+  assert.equal(readCoverState({ type: 'cover', currentOperation: 0 }), COVER_STATE.CLOSED);
 });
 
 test('setting a brightness turns the light on, so the slider does something', () => {
@@ -161,6 +202,14 @@ test('a fan speed is scaled against the levels the firmware declares', () => {
     state: true,
     speedLevel: 3,
   });
+});
+
+test('a low fan speed never rounds down to the level 0 ESPHome rejects', () => {
+  assert.deepEqual(writeCommand({ key: 'speed', speedCount: 3 }, 10), {
+    state: true,
+    speedLevel: 1,
+  });
+  assert.deepEqual(writeCommand({ key: 'speed', speedCount: 3 }, 0), { state: false });
 });
 
 test('a feature with no write mapping is reported, not silently ignored', () => {

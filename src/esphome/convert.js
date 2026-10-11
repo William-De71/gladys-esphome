@@ -13,9 +13,17 @@
 //     Gladys stores percentages in 0..100.
 //   - ESPHome RGB is three floats in 0..1; Gladys stores one 0xRRGGBB integer.
 //   - ESPHome booleans are real booleans; Gladys stores 0 / 1.
+//
+// And one wire convention that motivates the rest: protobuf 3 never serializes
+// a field holding its type's default value. An OFF switch, a 0 W power reading
+// or a fully closed cover arrive with the field ABSENT, not set to false / 0.
+// Every state is therefore completed with those defaults before it is read
+// (see withWireDefaults), otherwise the "off" half of every state never reaches
+// Gladys.
 // -----------------------------------------------------------------------------
 
 import { DEVICE_FEATURE_CATEGORIES } from '@gladysassistant/integration-sdk';
+import { ENTITY_SCHEMAS } from 'esphome-client';
 
 // Gladys shutter/curtain state values (server/utils/constants.js).
 export const COVER_STATE = {
@@ -34,8 +42,50 @@ const COVER_OPERATION = {
 };
 
 // ESPHome LockState / LockCommand enums.
-const LOCK_STATE_LOCKED = 1;
+const LOCK_STATE = { LOCKED: 1, UNLOCKED: 2 };
 const LOCK_COMMAND = { UNLOCK: 0, LOCK: 1 };
+
+// The default each protobuf scalar type takes when the field is absent.
+const WIRE_DEFAULTS = {
+  bool: false,
+  string: '',
+  float: 0,
+  enum: 0,
+  varint: 0,
+  fixed32: 0,
+};
+
+/**
+ * Complete an ESPHome state event with the fields protobuf left out because
+ * they held their default value.
+ *
+ * A state response is a full snapshot of the entity (api.proto), so an absent
+ * field is never "unknown": it is false, 0 or ''. The client cannot tell the
+ * two apart and simply omits the field, which is how a switch turned off, a
+ * plug drawing 0 W, a closed cover or a pure blue light (red = 0) all went
+ * missing. The genuine "no reading" signal is `missingState`, which the firmware
+ * sets explicitly and which readMainState still honours.
+ *
+ * Events of an unknown type (no schema) are returned untouched.
+ * @param {object} event - The ESPHome state event, as emitted by the client.
+ * @returns {object} The event with every absent scalar field set to its default.
+ * @example
+ * withWireDefaults({ type: 'switch', key: 3 }); // { type: 'switch', key: 3, state: false }
+ */
+export function withWireDefaults(event) {
+  const schema = event && ENTITY_SCHEMAS[event.type];
+  const fields = schema && schema.state && schema.state.fields;
+  if (!fields) {
+    return event;
+  }
+  const completed = { ...event };
+  for (const [name, spec] of Object.entries(fields)) {
+    if (completed[name] === undefined && spec.valueType in WIRE_DEFAULTS) {
+      completed[name] = WIRE_DEFAULTS[spec.valueType];
+    }
+  }
+  return completed;
+}
 
 /**
  * Clamp a number into a range. ESPHome floats occasionally overshoot by a
@@ -110,12 +160,13 @@ export function unpackColor(color) {
  * feature. Returns undefined when the event carries nothing for that feature —
  * a light event, for instance, feeds several features but never all at once.
  * @param {object} feature - The Gladys feature (its `key` drives the read).
- * @param {object} event - The ESPHome state event.
+ * @param {object} rawEvent - The ESPHome state event, as emitted by the client.
  * @returns {number|object|undefined} The Gladys state, or undefined to skip.
  * @example
  * readState({ key: 'brightness' }, { state: true, brightness: 0.5 }); // 50
  */
-export function readState(feature, event) {
+export function readState(feature, rawEvent) {
+  const event = withWireDefaults(rawEvent);
   switch (feature.key) {
     case 'state':
       return readMainState(feature, event);
@@ -182,27 +233,19 @@ function readMainState(feature, event) {
   }
 
   if (feature.category === DEVICE_FEATURE_CATEGORIES.LOCK) {
-    if (event.state === undefined) {
-      return undefined;
+    // Only the two resting states have a Gladys value. JAMMED, LOCKING, OPEN…
+    // are neither, and reading them as "unlocked" would tell a scene the door
+    // is open while the bolt is still moving — or stuck.
+    const lockState = Number(event.state);
+    if (lockState === LOCK_STATE.LOCKED) {
+      return 1;
     }
-    return Number(event.state) === LOCK_STATE_LOCKED ? 1 : 0;
+    return lockState === LOCK_STATE.UNLOCKED ? 0 : undefined;
   }
 
-  // A `binary_sensor` reporting OFF carries NO `state` field at all. protobuf 3
-  // does not serialize a field holding its type's default value, so `false`
-  // travels as an absent field, and the client — which cannot distinguish
-  // "absent" from "unset" — omits it from the event entirely. Reading that as
-  // "nothing to publish" is what left a motion sensor stuck on "detected"
-  // forever: only the ON transitions ever reached Gladys.
-  //
-  // The entity type is what makes the absence readable: a binary_sensor state
-  // is a REQUIRED bool (api.proto BinarySensorStateResponse), so for this type
-  // — and only this type — an absent `state` means false, not "unknown". A
-  // numeric sensor keeps the opposite reading, since an absent float there
-  // really is a missing measurement. `missingState` above still wins: that is
-  // the explicit "no reading" signal, and the firmware sets it deliberately.
-  if (event.type === 'binary_sensor') {
-    return event.state ? 1 : 0;
+  if (event.type === 'valve') {
+    // A valve reports a position, not a state: any opening lets water through.
+    return event.position === undefined ? undefined : Number(event.position) > 0 ? 1 : 0;
   }
 
   if (event.state === undefined) {
@@ -236,12 +279,15 @@ function readMainState(feature, event) {
  * reports the MOVEMENT (`currentOperation`) and the position separately, while
  * Gladys expects a single value covering both, so a resting cover is resolved
  * through its position.
- * @param {object} event - The ESPHome cover state event.
+ * @param {object} rawEvent - The ESPHome cover state event.
  * @returns {number|undefined} The Gladys shutter state.
  * @example
  * readCoverState({ currentOperation: 1 }); // 1 (opening)
  */
-export function readCoverState(event) {
+export function readCoverState(rawEvent) {
+  // Called on its own (tests, callers outside readState) the event may still
+  // lack its defaults: IDLE and position 0 are exactly the absent values.
+  const event = withWireDefaults(rawEvent);
   if (event.currentOperation === COVER_OPERATION.IS_OPENING) {
     return COVER_STATE.OPENING;
   }
@@ -305,11 +351,18 @@ export function writeCommand(feature, value) {
     case 'position':
       return { position: percentToRatio(numeric) };
 
-    case 'speed':
+    case 'speed': {
+      if (numeric <= 0) {
+        return { state: false };
+      }
+      // Never round a non-zero speed down to level 0: "on at level 0" is a
+      // state ESPHome rejects, and 10 % on a 3-speed fan means its lowest speed.
+      const levels = feature.speedCount || 100;
       return {
-        state: numeric > 0,
-        speedLevel: Math.round((numeric / 100) * (feature.speedCount || 100)),
+        state: true,
+        speedLevel: clamp(Math.round((numeric / 100) * levels), 1, levels),
       };
+    }
 
     case 'target_temperature':
       return { targetTemperature: numeric };
@@ -351,6 +404,11 @@ function writeMainState(feature, value) {
 
   if (feature.category === DEVICE_FEATURE_CATEGORIES.LOCK) {
     return { command: value === 1 ? LOCK_COMMAND.LOCK : LOCK_COMMAND.UNLOCK };
+  }
+
+  if (feature.entityType === 'valve') {
+    // A valve is driven like a cover, by target position.
+    return { position: value === 1 ? 1 : 0 };
   }
 
   if (feature.category === DEVICE_FEATURE_CATEGORIES.DURATION) {

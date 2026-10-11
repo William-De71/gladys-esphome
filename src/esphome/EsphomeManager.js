@@ -57,6 +57,13 @@ export class EsphomeManager {
      * @type {Map<object, string>}
      */
     this.nodeNames = new Map();
+    /**
+     * Connections being opened, indexed by lower-cased node name. The watchdog,
+     * a scan and a poll can all ask for the same node within the same second;
+     * they share the attempt in flight instead of opening one socket each.
+     * @type {Map<string, Promise<object>>}
+     */
+    this.pending = new Map();
     /** @type {Function|null} */
     this.stateCallback = null;
     /** @type {Function|null} */
@@ -102,7 +109,30 @@ export class EsphomeManager {
     if (existing) {
       return existing;
     }
+    // A second socket to a node that is still answering the first one costs one
+    // of its four API slots for nothing — and two of them racing is how a node
+    // ends up answering "Max connections, rejecting".
+    const inFlight = this.pending.get(key);
+    if (inFlight) {
+      return inFlight;
+    }
+    const attempt = this.open(node, encryptionKey, timeoutSeconds).finally(() => {
+      this.pending.delete(key);
+    });
+    this.pending.set(key, attempt);
+    return attempt;
+  }
 
+  /**
+   * Open a new connection to a node and wire its callbacks. Only connect()
+   * calls this, once it made sure no other attempt is running for that node.
+   * @param {object} node - `{ name, host, port }` of the node.
+   * @param {string|null} encryptionKey - The base64 Noise key, or null.
+   * @param {number} timeoutSeconds - How long to wait for the node to answer.
+   * @returns {Promise<object>} The connected ESPHome client.
+   */
+  async open(node, encryptionKey, timeoutSeconds) {
+    const key = String(node.name).toLowerCase();
     const host = node.host;
     const port = node.port || DEFAULT_PORT;
     logger.info(`Connecting to ESPHome node "${node.name}" (${host}:${port})`);
@@ -177,7 +207,12 @@ export class EsphomeManager {
     // any state event or command has to find it.
     const info = client.deviceInfo() || {};
     if (info.name) {
-      this.rename(node.name, info.name);
+      const survivor = this.rename(node.name, info.name);
+      if (survivor !== client) {
+        // The same node was already connected under its real name: this new
+        // connection was the duplicate and is closed. Hand back the live one.
+        return survivor;
+      }
     }
 
     const name = currentName();
@@ -200,19 +235,18 @@ export class EsphomeManager {
    * client that is filed under the address.
    * @param {string} currentName - The name the connection is filed under.
    * @param {string} realName - The name the node reports.
-   * @returns {void}
+   * @returns {object|undefined} The connection that now serves the node: the
+   *   renamed one, or the one already filed under the real name when the
+   *   renamed one turned out to be its duplicate.
    * @example
    * manager.rename('192.168.1.42', 'salon');
    */
   rename(currentName, realName) {
     const from = String(currentName).toLowerCase();
     const to = String(realName).toLowerCase();
-    if (from === to) {
-      return;
-    }
     const client = this.clients.get(from);
-    if (!client) {
-      return;
+    if (from === to || !client) {
+      return client;
     }
     // A node already connected under its real name (found by the scan AND
     // declared by hand) would otherwise be replaced by its own duplicate.
@@ -224,7 +258,7 @@ export class EsphomeManager {
       this.entityKeys.delete(from);
       this.nodeNames.delete(client);
       client.disconnect();
-      return;
+      return existing;
     }
 
     this.clients.set(to, client);
@@ -243,6 +277,7 @@ export class EsphomeManager {
     // real one so later states and lifecycle events carry it.
     this.nodeNames.set(client, realName);
     logger.info(`ESPHome node "${currentName}" reports its real name: "${realName}"`);
+    return client;
   }
 
   /**
@@ -278,8 +313,16 @@ export class EsphomeManager {
    * const entity = manager.entityByKey('salon', 560583272);
    */
   entityByKey(nodeName, entityKey) {
-    const index = this.entityKeys.get(String(nodeName).toLowerCase());
-    return index ? index.get(entityKey) : undefined;
+    const key = String(nodeName).toLowerCase();
+    const found = this.entityKeys.get(key)?.get(entityKey);
+    if (found) {
+      return found;
+    }
+    // A key we never indexed: the client may have learnt the entity after our
+    // last snapshot (a reconnection that re-listed a reflashed node). Rebuilding
+    // is cheap and only happens on a miss.
+    this.indexEntities(nodeName);
+    return this.entityKeys.get(key)?.get(entityKey);
   }
 
   /**
