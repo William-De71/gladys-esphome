@@ -1,3 +1,13 @@
+## [1.1.0](https://github.com/William-De71/gladys-esphome/compare/v1.0.5...v1.1.0) (2026-10-11)
+
+### Features
+
+* map ESPHome sirens and valves, translate everything into de and es ([eaf59f9](https://github.com/William-De71/gladys-esphome/commit/eaf59f98ef050459e795c04563cdabaf91c7a0a8))
+
+### Bug Fixes
+
+* publish the OFF and zero states protobuf leaves out of the wire ([2dd41b3](https://github.com/William-De71/gladys-esphome/commit/2dd41b3e96accc7d843a1fa7f6e29b9ccd59250d))
+
 ## [1.0.5](https://github.com/William-De71/gladys-esphome/compare/v1.0.4...v1.0.5) (2026-09-11)
 
 ### Bug Fixes
