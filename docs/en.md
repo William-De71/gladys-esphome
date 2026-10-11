@@ -2,6 +2,8 @@
 
 This integration controls your **ESPHome** devices (ESP32, ESP8266) from Gladys Assistant, directly on your local network, through the ESPHome **native API**. No cloud, no MQTT broker, no Home Assistant required.
 
+![Gladys, the integration and your ESPHome nodes: nodes push their states, commands leave from Gladys, and discovery goes through the mDNS Gladys captures](images/overview.svg)
+
 ## What it does
 
 Unlike an off-the-shelf device, an ESPHome node exposes exactly what **you** declared in its YAML file. The integration therefore adapts to whatever each node announces:
@@ -10,17 +12,20 @@ Unlike an off-the-shelf device, an ESPHome node exposes exactly what **you** dec
 | ----------------- | ------------------------------------------------------- |
 | `sensor`          | Numeric sensor (temperature, humidity, power, battery…) |
 | `binary_sensor`   | Binary sensor (motion, opening, presence, leak, smoke…) |
-| `text_sensor`     | Text sensor                                             |
+| `text_sensor`     | Text sensor (read-only)                                 |
+| `text`            | Writable text: send a message to a node (display)       |
 | `switch`          | Switch (on/off)                                         |
 | `light`           | Light: on/off, brightness, color, color temperature     |
 | `cover`           | Cover or curtain: open, close, stop, position           |
 | `fan`             | Fan: on/off and speed                                   |
 | `lock`            | Lock: lock / unlock                                     |
+| `siren`           | Siren: on / off                                         |
+| `valve`           | Valve: open / closed                                    |
 | `button`          | Push button                                             |
 | `number`          | Writable numeric setting (slider)                       |
-| `climate`         | Thermostat: setpoint and measured temperature           |
+| `climate`         | Thermostat: setpoint (single) and measured temperature  |
 
-Types Gladys has no equivalent for (`media_player`, `camera`, `select`, `valve`, `date`…) are simply left out of discovery.
+Types Gladys has no equivalent for (`media_player`, `camera`, `select`, `event`, `date`…) are simply left out of discovery.
 
 ### States arrive in real time
 
@@ -76,6 +81,8 @@ living-room.local
 192.168.1.43:6054
 ```
 
+![The integration merges three sources: the devices it already knows, the mDNS scan and the nodes added by hand; on connection, the node gives its real name, which becomes its id](images/discovery.svg)
+
 The port is optional (6053 by default). Once connected, the node reports its real name itself: a node added by IP address still shows up under its ESPHome name, and it keeps working even if its IP address changes later.
 
 > **If that node has an encryption key of its own**, declare it under **Keys per node** using **the same address** you typed here, not its ESPHome name:
@@ -94,6 +101,8 @@ The port is optional (6053 by default). Once connected, the node reports its rea
 ## Understanding sensors: why `device_class` matters
 
 Gladys needs to know **what a sensor measures** to display it properly (icon, unit, chart). ESPHome carries that information through `device_class`.
+
+![A YAML entity becomes one or more Gladys features: through its device_class, through the shape of its declaration, or as a generic measurement](images/mapping.svg)
 
 With a `device_class`, your sensor arrives typed:
 
@@ -117,7 +126,7 @@ Two families of sensors escape that rule, because ESPHome never gives them a `de
 | `unit_of_measurement: "°"`         | Angle           |
 | no unit and `accuracy_decimals: 0` | Counter         |
 
-This is the everyday case with mmWave sensors (`ld2350`, `ld2450`…): their target counters (_Moving / Still / Presence Target Count_) land under **Counter**, and their target angles (_Target-1 Angle_) under **Angle**. A firmware that explicitly declares `state_class: measurement_angle`, `total` or `total_increasing` is classified on that declaration first.
+This is the everyday case with mmWave sensors (`ld2410`, `ld2450`…): their target counters (_Moving / Still / Presence Target Count_) land under **Counter**, and their target angles (_Target-1 Angle_) under **Angle**. A firmware that explicitly declares `state_class: measurement_angle`, `total` or `total_increasing` is classified on that declaration first.
 
 Recognized `device_class` values include: `temperature`, `humidity`, `pressure`, `illuminance`, `battery`, `signal_strength`, `carbon_dioxide`, `pm25`, `pm10`, `power`, `energy`, `voltage`, `current`, `distance`, `moisture`, `speed`, `duration`, and for binary sensors: `motion`, `occupancy`, `door`, `window`, `smoke`, `gas`, `moisture`, `vibration`, `tamper`, `battery`, `lock`.
 
@@ -134,6 +143,9 @@ That is expected after a node reboot (OTA update, power cut). The integration re
 
 **A device shows up as "unreachable"**
 The connection to that node dropped: node powered off, out of Wi-Fi range, or rebooting. The integration retries automatically. Note also that an ESPHome node accepts a limited number of simultaneous API clients: if the same node is already connected to a Home Assistant or an open ESPHome log console, it may refuse one more connection. Close the clients you do not need and use the **Reconnect the nodes** action.
+
+**A thermostat only shows the measured temperature, with no setpoint**
+It is a two-point thermostat (`heat_cool`, with a low and a high setpoint). Gladys handles one setpoint per thermostat: rather than show a slider that would sit at 0 and drive nothing, the integration only publishes the measured temperature.
 
 **An entity does not show up at all**
 Its type has no Gladys equivalent (see the features table), or it is marked `internal: true` in your YAML — in which case ESPHome does not expose it on its API at all.

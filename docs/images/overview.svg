@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" width="880" height="500" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>How the ESPHome integration talks to your nodes</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#57606a"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a7f37"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8250df"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="880" height="500" rx="14" fill="#ffffff" stroke="#d0d7de"/>
+
+  <!-- Gladys -->
+  <rect x="40" y="40" width="230" height="120" rx="10" fill="#eef6ff" stroke="#0969da" stroke-width="1.5"/>
+  <text x="155" y="78" text-anchor="middle" font-size="16" font-weight="600" fill="#0a3069">Gladys</text>
+  <text x="155" y="102" text-anchor="middle" font-size="12" fill="#24292f">dashboard, scenes, history</text>
+  <text x="155" y="122" text-anchor="middle" font-size="12" fill="#24292f">+ mDNS capture on the host</text>
+  <text x="155" y="142" text-anchor="middle" font-size="12" fill="#24292f">network (_esphomelib._tcp)</text>
+
+  <!-- Integration -->
+  <rect x="390" y="40" width="250" height="120" rx="10" fill="#fff8e6" stroke="#bf8700" stroke-width="1.5"/>
+  <text x="515" y="78" text-anchor="middle" font-size="16" font-weight="600" fill="#6b4600">ESPHome integration</text>
+  <text x="515" y="102" text-anchor="middle" font-size="12" fill="#24292f">its own container,</text>
+  <text x="515" y="122" text-anchor="middle" font-size="12" fill="#24292f">one open session per node,</text>
+  <text x="515" y="142" text-anchor="middle" font-size="12" fill="#24292f">states batched every 200 ms</text>
+
+  <!-- Gladys <-> integration -->
+  <line x1="270" y1="100" x2="388" y2="100" stroke="#57606a" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="329" y="88" text-anchor="middle" font-size="11" fill="#57606a">WebSocket</text>
+  <text x="329" y="118" text-anchor="middle" font-size="11" fill="#57606a">+ host API</text>
+
+  <!-- Legend -->
+  <line x1="680" y1="66" x2="720" y2="66" stroke="#1a7f37" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <text x="728" y="70" font-size="12" fill="#24292f">states pushed</text>
+  <line x1="680" y1="96" x2="720" y2="96" stroke="#8250df" stroke-width="2" marker-end="url(#arrow-purple)"/>
+  <text x="728" y="100" font-size="12" fill="#24292f">commands</text>
+  <line x1="680" y1="126" x2="720" y2="126" stroke="#57606a" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="728" y="130" font-size="12" fill="#24292f">mDNS announce</text>
+
+  <!-- LAN band -->
+  <rect x="20" y="215" width="840" height="265" rx="12" fill="#f6f8fa" stroke="#d0d7de" stroke-dasharray="6 5"/>
+  <text x="40" y="240" font-size="12" font-weight="600" fill="#57606a">YOUR LOCAL NETWORK — native API, TCP 6053, Noise encryption</text>
+
+  <!-- Node 1 -->
+  <rect x="60" y="290" width="220" height="160" rx="10" fill="#ffffff" stroke="#24292f" stroke-width="1.5"/>
+  <text x="170" y="320" text-anchor="middle" font-size="15" font-weight="600" fill="#24292f">salon</text>
+  <text x="170" y="340" text-anchor="middle" font-size="12" fill="#57606a">ESP32 + mmWave LD2450</text>
+  <text x="80" y="370" font-size="12" fill="#24292f">• presence, motion</text>
+  <text x="80" y="390" font-size="12" fill="#24292f">• target count, angles</text>
+  <text x="80" y="410" font-size="12" fill="#24292f">• temperature, humidity</text>
+  <text x="80" y="430" font-size="12" fill="#24292f">• RGB light</text>
+
+  <!-- Node 2 -->
+  <rect x="330" y="290" width="220" height="160" rx="10" fill="#ffffff" stroke="#24292f" stroke-width="1.5"/>
+  <text x="440" y="320" text-anchor="middle" font-size="15" font-weight="600" fill="#24292f">garage</text>
+  <text x="440" y="340" text-anchor="middle" font-size="12" fill="#57606a">ESP8266 smart plug</text>
+  <text x="350" y="370" font-size="12" fill="#24292f">• relay (switch)</text>
+  <text x="350" y="390" font-size="12" fill="#24292f">• power, energy, voltage</text>
+  <text x="350" y="410" font-size="12" fill="#24292f">• restart button</text>
+
+  <!-- Node 3 -->
+  <rect x="600" y="290" width="220" height="160" rx="10" fill="#ffffff" stroke="#24292f" stroke-width="1.5"/>
+  <text x="710" y="320" text-anchor="middle" font-size="15" font-weight="600" fill="#24292f">cuisine</text>
+  <text x="710" y="340" text-anchor="middle" font-size="12" fill="#57606a">ESP32 + e-paper display</text>
+  <text x="620" y="370" font-size="12" fill="#24292f">• text (message to show)</text>
+  <text x="620" y="390" font-size="12" fill="#24292f">• cover, position</text>
+  <text x="620" y="410" font-size="12" fill="#24292f">• leak sensor</text>
+
+  <!-- State arrows (nodes -> integration) -->
+  <path d="M 190 288 C 190 230, 470 220, 480 163" fill="none" stroke="#1a7f37" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <path d="M 440 288 L 500 163" fill="none" stroke="#1a7f37" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <path d="M 690 288 C 690 230, 560 220, 545 163" fill="none" stroke="#1a7f37" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+  <!-- Command arrows (integration -> nodes) -->
+  <path d="M 530 163 L 470 288" fill="none" stroke="#8250df" stroke-width="2" marker-end="url(#arrow-purple)"/>
+  <path d="M 575 163 C 590 220, 720 230, 730 288" fill="none" stroke="#8250df" stroke-width="2" marker-end="url(#arrow-purple)"/>
+
+  <!-- mDNS announce (nodes -> Gladys) -->
+  <path d="M 110 288 L 110 163" fill="none" stroke="#57606a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+</svg>

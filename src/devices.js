@@ -426,9 +426,10 @@ export async function publishEntityState(gladys, nodeName, entity, event) {
       return;
     }
     const value = readState(
-      // The read needs the category (a cover state is not a boolean) and, for a
-      // fan, the number of speed levels the firmware declares.
-      { ...descriptor, speedCount: entity.supportedSpeedCount },
+      // The read needs the category (a cover state is not a boolean), the
+      // entity type (a valve reads its position) and, for a fan, the number of
+      // speed levels the firmware declares.
+      { ...descriptor, entityType: entity.type, speedCount: entity.supportedSpeedCount },
       event,
     );
     if (value === undefined || value === null) {
@@ -599,6 +600,7 @@ export async function setDeviceValue(gladys, manager, device, feature, value) {
       key: featureKey,
       category: feature.category,
       type: feature.type,
+      entityType,
       speedCount: entity && entity.supportedSpeedCount,
     },
     value,

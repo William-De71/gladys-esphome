@@ -1,0 +1,151 @@
+# ESPHome-Integration
+
+Mit dieser Integration steuern Sie Ihre **ESPHome**-Geräte (ESP32, ESP8266) aus Gladys Assistant heraus, direkt in Ihrem lokalen Netzwerk, über die **native API** von ESPHome. Keine Cloud, kein MQTT-Broker, kein Home Assistant nötig.
+
+![Gladys, die Integration und Ihre ESPHome-Knoten: Die Knoten senden ihre Zustände selbst, Befehle gehen von Gladys aus, und die Suche läuft über das von Gladys mitgeschnittene mDNS](images/overview.svg)
+
+## Funktionen
+
+Anders als ein Gerät von der Stange stellt ein ESPHome-Knoten genau das bereit, was **Sie** in seiner YAML-Datei angegeben haben. Die Integration richtet sich daher nach dem, was jeder Knoten meldet:
+
+| ESPHome-Komponente | Was Sie in Gladys erhalten                                     |
+| ------------------ | -------------------------------------------------------------- |
+| `sensor`           | Numerischer Sensor (Temperatur, Luftfeuchtigkeit, Leistung, …) |
+| `binary_sensor`    | Binärsensor (Bewegung, Öffnung, Anwesenheit, Leck, Rauch, …)   |
+| `text_sensor`      | Textsensor (nur lesend)                                        |
+| `text`             | Beschreibbarer Text: eine Nachricht an den Knoten (Display)    |
+| `switch`           | Schalter (ein/aus)                                             |
+| `light`            | Lampe: ein/aus, Helligkeit, Farbe, Farbtemperatur              |
+| `cover`            | Rollladen oder Vorhang: öffnen, schließen, stoppen, Position   |
+| `fan`              | Ventilator: ein/aus und Geschwindigkeit                        |
+| `lock`             | Schloss: verriegeln / entriegeln                               |
+| `siren`            | Sirene: ein / aus                                              |
+| `valve`            | Ventil: offen / geschlossen                                    |
+| `button`           | Taster                                                         |
+| `number`           | Beschreibbarer Zahlenwert (Schieberegler)                      |
+| `climate`          | Thermostat: Sollwert (ein einzelner) und gemessene Temperatur  |
+
+Typen ohne Entsprechung in Gladys (`media_player`, `camera`, `select`, `event`, `date`, …) werden bei der Suche einfach ausgelassen.
+
+### Zustände kommen in Echtzeit an
+
+ESPHome **sendet** seine Zustandsänderungen von selbst: Die Integration hält zu jedem Knoten eine Verbindung offen, und Gladys erhält den neuen Wert in dem Moment, in dem er sich ändert. Es gibt kein Abfrageintervall einzustellen.
+
+## Voraussetzungen
+
+- Ein oder mehrere Geräte mit **ESPHome 2025.10 oder neuer**.
+- Die native API in Ihrer YAML aktiviert (das ist standardmäßig der Fall):
+
+  ```yaml
+  api:
+    encryption:
+      key: 'ihr_base64_schluessel'
+  ```
+
+- Gladys und Ihre ESPHome-Knoten müssen sich im **selben lokalen Netzwerk** befinden.
+
+## Einrichtung
+
+### 1. Der Verschlüsselungsschlüssel
+
+Öffnen Sie den Konfigurationsbildschirm der Integration und fügen Sie unter **Verschlüsselungsschlüssel** den Schlüssel ein, der in Ihrer YAML unter `api: encryption: key:` steht.
+
+Wenn **alle** Ihre Knoten denselben Schlüssel verwenden (der Normalfall bei einem gemeinsamen `!secret`), ist das die einzige Angabe.
+
+> Haben Ihre Knoten gar keine Verschlüsselung (`api:` ohne `encryption`-Block), lassen Sie dieses Feld leer.
+
+### 2. Knoten mit einem anderen Schlüssel
+
+Haben einige Knoten einen eigenen Schlüssel, füllen Sie **Schlüssel pro Knoten** aus, ein Knoten pro Zeile:
+
+```
+wohnzimmer|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0=
+kueche|9xQm4Zt6R8s0T2u4V6w8X0y2Z4a6B8c0D2e4F6g8H0=
+```
+
+Der Knotenname ist der unter `esphome: name:` angegebene. Diese Schlüssel haben Vorrang vor dem Standardschlüssel.
+
+### 3. Geräte entdecken
+
+Öffnen Sie den Bildschirm **Entdecken** und starten Sie eine Suche. Die ESPHome-Knoten in Ihrem Netzwerk erscheinen dort mit all ihren Entitäten. Fügen Sie die gewünschten hinzu: **keine IP-Adresse einzugeben**.
+
+Die Suche nutzt mDNS (das Protokoll, mit dem sich ESPHome im Netzwerk ankündigt). Gladys übernimmt den Mitschnitt selbst, denn die Integration läuft in einem Container, der solchen Verkehr nie empfängt.
+
+### 4. Wenn ein Knoten nicht gefunden wird
+
+Manche Netzwerke blockieren mDNS (getrennte VLANs, WLAN mit Client-Isolation, ein Router, der Multicast filtert). Tragen Sie den Knoten dann unter **Manuell hinzugefügte Knoten** ein, eine Adresse pro Zeile:
+
+```
+wohnzimmer.local
+192.168.1.42
+192.168.1.43:6054
+```
+
+![Die Integration führt drei Quellen zusammen: die bereits bekannten Geräte, die mDNS-Suche und die manuell hinzugefügten Knoten; beim Verbinden nennt der Knoten seinen echten Namen, der zu seiner Kennung wird](images/discovery.svg)
+
+Der Port ist optional (standardmäßig 6053). Sobald er verbunden ist, meldet der Knoten selbst seinen echten Namen: Ein per IP-Adresse hinzugefügter Knoten erscheint trotzdem unter seinem ESPHome-Namen und funktioniert weiter, auch wenn sich seine IP-Adresse später ändert.
+
+> **Hat dieser Knoten einen eigenen Verschlüsselungsschlüssel**, tragen Sie ihn unter **Schlüssel pro Knoten** mit **derselben Adresse** ein, die Sie hier angegeben haben, nicht mit seinem ESPHome-Namen:
+>
+> ```
+> 192.168.1.42|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0=
+> ```
+>
+> Der Grund ist einfach: Sein Name ist erst nach erfolgreicher Verbindung bekannt, und genau diese Verbindung braucht den Schlüssel. Das betrifft weder die von der Suche gefundenen Knoten noch jene, die den Standardschlüssel verwenden.
+
+## Verfügbare Aktionen
+
+- **Verbindung testen**: startet eine vollständige Suche und zeigt an, wie viele Knoten geantwortet haben und wie viele Funktionen verfügbar sind.
+- **Knoten neu verbinden**: schließt alle Verbindungen und öffnet sie neu. Nützlich, nachdem ein Knoten neu geflasht oder ein Schlüssel geändert wurde.
+
+## Sensoren verstehen: warum `device_class` wichtig ist
+
+Gladys muss wissen, **was ein Sensor misst**, um ihn richtig darzustellen (Symbol, Einheit, Diagramm). ESPHome übermittelt diese Information über `device_class`.
+
+![Eine YAML-Entität wird zu einer oder mehreren Gladys-Funktionen: über ihre device_class, über die Form ihrer Deklaration oder als allgemeiner Messwert](images/mapping.svg)
+
+Mit einer `device_class` kommt Ihr Sensor typisiert an:
+
+```yaml
+sensor:
+  - platform: dht
+    temperature:
+      name: 'Temperatur Wohnzimmer'
+      device_class: temperature # -> Temperatursensor in Gladys
+    humidity:
+      name: 'Luftfeuchtigkeit Wohnzimmer'
+      device_class: humidity # -> Luftfeuchtigkeitssensor in Gladys
+```
+
+**Ohne `device_class` erscheint der Sensor trotzdem**, allerdings in der allgemeinen Kategorie „Unbekannt“. Er funktioniert und sein Verlauf wird gespeichert, aber er bekommt weder ein eigenes Symbol noch eine eigene Kategorie. Erscheint einer Ihrer Sensoren so, ergänzen Sie die passende `device_class` in Ihrer YAML und starten Sie die Suche erneut.
+
+Zwei Sensorfamilien sind von dieser Regel ausgenommen, weil ESPHome ihnen nie eine `device_class` gibt — das Vokabular von Home Assistant hat kein Wort für das, was sie messen. Die Integration erkennt sie an der Form ihrer Deklaration:
+
+| ESPHome-Deklaration                      | Gladys-Kategorie |
+| ---------------------------------------- | ---------------- |
+| `unit_of_measurement: "°"`               | Winkel           |
+| keine Einheit und `accuracy_decimals: 0` | Zähler           |
+
+Das ist der typische Fall bei mmWave-Sensoren (`ld2410`, `ld2450`, …): Ihre Zielzähler (_Moving / Still / Presence Target Count_) landen unter **Zähler**, ihre Zielwinkel (_Target-1 Angle_) unter **Winkel**. Eine Firmware, die ausdrücklich `state_class: measurement_angle`, `total` oder `total_increasing` angibt, wird vorrangig nach dieser Angabe eingeordnet.
+
+Zu den erkannten `device_class`-Werten gehören: `temperature`, `humidity`, `pressure`, `illuminance`, `battery`, `signal_strength`, `carbon_dioxide`, `pm25`, `pm10`, `power`, `energy`, `voltage`, `current`, `distance`, `moisture`, `speed`, `duration` und für Binärsensoren: `motion`, `occupancy`, `door`, `window`, `smoke`, `gas`, `moisture`, `vibration`, `tamper`, `battery`, `lock`.
+
+## Fehlerbehebung
+
+**Die Suche findet keinen Knoten**
+Prüfen Sie, ob Ihre Knoten eingeschaltet und mit dem WLAN verbunden sind. Blockiert Ihr Netzwerk mDNS, fügen Sie sie manuell hinzu (siehe oben).
+
+**Ein Knoten wird gefunden, erscheint aber nicht in der Liste**
+Das ist fast immer ein Verschlüsselungsschlüssel, der nicht passt. Der Knoten ist im Netzwerk sichtbar, lehnt die Verbindung aber ab. Prüfen Sie den Schlüssel in seiner YAML und verwenden Sie **Schlüssel pro Knoten**, wenn er vom Standardschlüssel abweicht.
+
+**Ein Knoten verschwindet und kommt wieder**
+Das ist nach einem Neustart des Knotens normal (OTA-Update, Stromausfall). Die Integration verbindet sich von selbst neu, mit wachsender Wartezeit, um das Netzwerk nie zu überlasten.
+
+**Ein Gerät wird als „nicht erreichbar“ angezeigt**
+Die Verbindung zu diesem Knoten ist abgebrochen: Knoten ausgeschaltet, außer WLAN-Reichweite oder im Neustart. Die Integration versucht es automatisch erneut. Beachten Sie außerdem, dass ein ESPHome-Knoten nur eine begrenzte Zahl gleichzeitiger API-Clients akzeptiert: Ist derselbe Knoten bereits mit einem Home Assistant oder einer geöffneten ESPHome-Log-Konsole verbunden, kann er eine weitere Verbindung ablehnen. Schließen Sie nicht benötigte Clients und verwenden Sie die Aktion **Knoten neu verbinden**.
+
+**Ein Thermostat zeigt nur die gemessene Temperatur, ohne Sollwert**
+Es handelt sich um ein Thermostat mit zwei Sollwerten (`heat_cool`, ein unterer und ein oberer). Gladys verwaltet einen Sollwert pro Thermostat: Statt eines Schiebereglers, der auf 0 stünde und nichts steuern würde, veröffentlicht die Integration nur die gemessene Temperatur.
+
+**Eine Entität erscheint überhaupt nicht**
+Ihr Typ hat keine Entsprechung in Gladys (siehe Funktionstabelle), oder sie ist in Ihrer YAML als `internal: true` markiert — dann stellt ESPHome sie gar nicht über seine API bereit.

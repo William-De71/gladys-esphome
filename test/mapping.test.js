@@ -146,6 +146,34 @@ test('a number entity honours the bounds declared in the YAML', () => {
   assert.equal(feature.readOnly, false);
 });
 
+test('a siren and a valve are writable on/off features', () => {
+  const [siren] = describeEntity({ type: 'siren' });
+  assert.equal(siren.category, 'siren');
+  assert.equal(siren.type, 'binary');
+  assert.equal(siren.readOnly, false);
+  const [valve] = describeEntity({ type: 'valve' });
+  assert.equal(valve.category, 'switch');
+  assert.equal(valve.readOnly, false);
+});
+
+test('a two-point climate gets no single setpoint it would ignore', () => {
+  // heat_cool climates hold a low and a high setpoint; a slider bound to the
+  // single target_temperature would read 0 and move nothing.
+  const keys = (entity) => describeEntity(entity).map((feature) => feature.key);
+  assert.deepEqual(keys({ type: 'climate', supportsCurrentTemperature: true }), [
+    'target_temperature',
+    'current_temperature',
+  ]);
+  assert.deepEqual(
+    keys({
+      type: 'climate',
+      supportsCurrentTemperature: true,
+      supportsTwoPointTargetTemperature: true,
+    }),
+    ['current_temperature'],
+  );
+});
+
 test('an entity type Gladys cannot represent is left out of discovery', () => {
   // Publishing a feature that could never work is worse than not showing it.
   assert.deepEqual(describeEntity({ type: 'media_player' }), []);
@@ -208,6 +236,7 @@ test('every category/type pair the mapping can emit exists in the Gladys front',
     'text/text',
     'angle-sensor/integer',
     'counter-sensor/integer',
+    'siren/binary',
     'unknown/unknown',
   ]);
 
@@ -232,6 +261,8 @@ test('every category/type pair the mapping can emit exists in the Gladys front',
     { type: 'fan', supportsSpeed: true },
     { type: 'climate', supportsCurrentTemperature: true },
     { type: 'number' },
+    { type: 'siren' },
+    { type: 'valve' },
   ];
 
   for (const entity of entities) {

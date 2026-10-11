@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 460" width="880" height="460" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>From an ESPHome YAML entity to Gladys features</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#57606a"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="880" height="460" rx="14" fill="#ffffff" stroke="#d0d7de"/>
+
+  <text x="40" y="42" font-size="13" font-weight="600" fill="#57606a">YOUR ESPHOME YAML</text>
+  <text x="520" y="42" font-size="13" font-weight="600" fill="#57606a">WHAT GLADYS SHOWS</text>
+
+  <!-- Row 1: device_class -->
+  <rect x="40" y="58" width="380" height="80" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="56" y="82" xml:space="preserve" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#24292f">- platform: bme280_i2c</text>
+  <text x="56" y="102" xml:space="preserve" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#24292f">  temperature:</text>
+  <text x="56" y="122" xml:space="preserve" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#0550ae">    device_class: temperature</text>
+  <line x1="424" y1="98" x2="516" y2="98" stroke="#57606a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="470" y="88" text-anchor="middle" font-size="11" fill="#57606a">device_class</text>
+  <rect x="520" y="70" width="320" height="56" rx="8" fill="#eef6ff" stroke="#0969da"/>
+  <text x="536" y="94" font-size="13" font-weight="600" fill="#0a3069">Temperature sensor</text>
+  <text x="536" y="114" font-size="12" fill="#24292f">°C, history, graph, scene trigger</text>
+
+  <!-- Row 2: shape -->
+  <rect x="40" y="154" width="380" height="80" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="56" y="178" xml:space="preserve" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#24292f">- platform: ld2450</text>
+  <text x="56" y="198" xml:space="preserve" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#24292f">  target_1: angle:</text>
+  <text x="56" y="218" xml:space="preserve" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#0550ae">    unit "°", no device_class</text>
+  <line x1="424" y1="194" x2="516" y2="194" stroke="#57606a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="470" y="184" text-anchor="middle" font-size="11" fill="#57606a">shape</text>
+  <rect x="520" y="166" width="320" height="56" rx="8" fill="#eef6ff" stroke="#0969da"/>
+  <text x="536" y="190" font-size="13" font-weight="600" fill="#0a3069">Angle sensor</text>
+  <text x="536" y="210" font-size="12" fill="#24292f">target counters become Counter</text>
+
+  <!-- Row 3: light, several features -->
+  <rect x="40" y="250" width="380" height="80" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="56" y="274" xml:space="preserve" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#24292f">light:</text>
+  <text x="56" y="294" xml:space="preserve" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#24292f">  - platform: rgbct</text>
+  <text x="56" y="314" xml:space="preserve" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#0550ae">    name: Lamp</text>
+  <line x1="424" y1="290" x2="516" y2="290" stroke="#57606a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="470" y="280" text-anchor="middle" font-size="11" fill="#57606a">color modes</text>
+  <rect x="520" y="250" width="320" height="80" rx="8" fill="#fff8e6" stroke="#bf8700"/>
+  <text x="536" y="272" font-size="13" font-weight="600" fill="#6b4600">4 features, as the firmware allows</text>
+  <text x="536" y="292" font-size="12" fill="#24292f">Lamp · Lamp - brightness</text>
+  <text x="536" y="312" font-size="12" fill="#24292f">Lamp - color · Lamp - temperature</text>
+
+  <!-- Row 4: fallback -->
+  <rect x="40" y="346" width="380" height="80" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="56" y="370" xml:space="preserve" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#24292f">- platform: template</text>
+  <text x="56" y="390" xml:space="preserve" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#24292f">  name: Pool score</text>
+  <text x="56" y="410" xml:space="preserve" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#0550ae">  unit_of_measurement: pts</text>
+  <line x1="424" y1="386" x2="516" y2="386" stroke="#57606a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="470" y="376" text-anchor="middle" font-size="11" fill="#57606a">nothing known</text>
+  <rect x="520" y="358" width="320" height="56" rx="8" fill="#f6f8fa" stroke="#57606a"/>
+  <text x="536" y="382" font-size="13" font-weight="600" fill="#24292f">Generic measurement</text>
+  <text x="536" y="402" font-size="12" fill="#24292f">shown under its name — never dropped</text>
+</svg>

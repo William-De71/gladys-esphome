@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" width="880" height="420" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>Where the integration finds your nodes, and how a node gets its name</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#57606a"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="880" height="420" rx="14" fill="#ffffff" stroke="#d0d7de"/>
+
+  <text x="40" y="44" font-size="15" font-weight="600" fill="#24292f">1. Three sources, merged by node name — the later one wins</text>
+
+  <!-- Source 1 -->
+  <rect x="40" y="66" width="240" height="104" rx="10" fill="#f6f8fa" stroke="#57606a" stroke-width="1.2"/>
+  <text x="160" y="94" text-anchor="middle" font-size="14" font-weight="600" fill="#24292f">Known devices</text>
+  <text x="160" y="116" text-anchor="middle" font-size="12" fill="#57606a">address stored on each</text>
+  <text x="160" y="134" text-anchor="middle" font-size="12" fill="#57606a">device you added</text>
+  <text x="160" y="156" text-anchor="middle" font-size="11" fill="#57606a">survives an empty scan</text>
+
+  <!-- Source 2 -->
+  <rect x="320" y="66" width="240" height="104" rx="10" fill="#eef6ff" stroke="#0969da" stroke-width="1.2"/>
+  <text x="440" y="94" text-anchor="middle" font-size="14" font-weight="600" fill="#0a3069">mDNS scan</text>
+  <text x="440" y="116" text-anchor="middle" font-size="12" fill="#24292f">captured by Gladys</text>
+  <text x="440" y="134" text-anchor="middle" font-size="12" fill="#24292f">on the host network</text>
+  <text x="440" y="156" text-anchor="middle" font-size="11" fill="#57606a">fresher: follows a new DHCP lease</text>
+
+  <!-- Source 3 -->
+  <rect x="600" y="66" width="240" height="104" rx="10" fill="#fff8e6" stroke="#bf8700" stroke-width="1.2"/>
+  <text x="720" y="94" text-anchor="middle" font-size="14" font-weight="600" fill="#6b4600">Nodes added by hand</text>
+  <text x="720" y="116" text-anchor="middle" font-size="12" fill="#24292f">salon.local</text>
+  <text x="720" y="134" text-anchor="middle" font-size="12" fill="#24292f">192.168.1.42:6053</text>
+  <text x="720" y="156" text-anchor="middle" font-size="11" fill="#57606a">another VLAN, mDNS filtered</text>
+
+  <line x1="282" y1="118" x2="318" y2="118" stroke="#57606a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="562" y1="118" x2="598" y2="118" stroke="#57606a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <text x="40" y="222" font-size="15" font-weight="600" fill="#24292f">2. The handshake gives the node its real name</text>
+
+  <!-- Step: address -->
+  <rect x="40" y="244" width="220" height="70" rx="10" fill="#ffffff" stroke="#24292f" stroke-width="1.2"/>
+  <text x="150" y="272" text-anchor="middle" font-size="13" font-weight="600" fill="#24292f">192.168.1.42</text>
+  <text x="150" y="294" text-anchor="middle" font-size="12" fill="#57606a">typed by hand</text>
+
+  <line x1="262" y1="279" x2="328" y2="279" stroke="#57606a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="295" y="268" text-anchor="middle" font-size="11" fill="#57606a">Noise</text>
+
+  <!-- Step: hello -->
+  <rect x="330" y="244" width="220" height="70" rx="10" fill="#ffffff" stroke="#24292f" stroke-width="1.2"/>
+  <text x="440" y="272" text-anchor="middle" font-size="13" font-weight="600" fill="#24292f">esphome: name: salon</text>
+  <text x="440" y="294" text-anchor="middle" font-size="12" fill="#57606a">reported by the node</text>
+
+  <line x1="552" y1="279" x2="618" y2="279" stroke="#57606a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Step: device -->
+  <rect x="620" y="244" width="220" height="70" rx="10" fill="#dafbe1" stroke="#1a7f37" stroke-width="1.2"/>
+  <text x="730" y="272" text-anchor="middle" font-size="13" font-weight="600" fill="#116329">Gladys device "salon"</text>
+  <text x="730" y="294" text-anchor="middle" font-size="12" fill="#24292f">id built from the name</text>
+
+  <text x="440" y="356" text-anchor="middle" font-size="12" fill="#24292f">The external id never contains an IP address: a node that moves to another address keeps</text>
+  <text x="440" y="376" text-anchor="middle" font-size="12" fill="#24292f">its device, its history and its scenes. The address is only stored to reconnect without a scan.</text>
+</svg>

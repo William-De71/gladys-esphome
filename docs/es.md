@@ -1,0 +1,151 @@
+# Integración ESPHome
+
+Esta integración permite controlar sus dispositivos **ESPHome** (ESP32, ESP8266) desde Gladys Assistant, directamente en su red local, mediante la **API nativa** de ESPHome. Sin nube, sin broker MQTT y sin necesidad de Home Assistant.
+
+![Gladys, la integración y sus nodos ESPHome: los nodos envían sus estados por sí mismos, los comandos salen de Gladys y la búsqueda pasa por el mDNS que captura Gladys](images/overview.svg)
+
+## Funcionalidades
+
+A diferencia de un aparato comercial, un nodo ESPHome expone exactamente lo que **usted** ha declarado en su archivo YAML. Por eso la integración se adapta a lo que anuncia cada nodo:
+
+| Componente ESPHome | Lo que obtiene en Gladys                                        |
+| ------------------ | --------------------------------------------------------------- |
+| `sensor`           | Sensor numérico (temperatura, humedad, potencia, batería…)      |
+| `binary_sensor`    | Sensor binario (movimiento, apertura, presencia, fuga, humo…)   |
+| `text_sensor`      | Sensor de texto (solo lectura)                                  |
+| `text`             | Texto editable: enviar un mensaje al nodo (pantalla)            |
+| `switch`           | Interruptor (encendido/apagado)                                 |
+| `light`            | Lámpara: encendido/apagado, brillo, color, temperatura de color |
+| `cover`            | Persiana o cortina: abrir, cerrar, detener, posición            |
+| `fan`              | Ventilador: encendido/apagado y velocidad                       |
+| `lock`             | Cerradura: bloquear / desbloquear                               |
+| `siren`            | Sirena: encendida / apagada                                     |
+| `valve`            | Válvula: abierta / cerrada                                      |
+| `button`           | Pulsador                                                        |
+| `number`           | Ajuste numérico editable (control deslizante)                   |
+| `climate`          | Termostato: consigna (una sola) y temperatura medida            |
+
+Los tipos que no tienen equivalente en Gladys (`media_player`, `camera`, `select`, `event`, `date`…) simplemente se omiten en la búsqueda.
+
+### Los estados llegan en tiempo real
+
+ESPHome **envía** sus cambios de estado por sí mismo: la integración mantiene una conexión abierta con cada nodo, y Gladys recibe el nuevo valor en el instante en que cambia. No hay ningún intervalo de consulta que ajustar.
+
+## Requisitos
+
+- Uno o varios dispositivos con **ESPHome 2025.10 o posterior**.
+- La API nativa activada en su YAML (lo está por defecto):
+
+  ```yaml
+  api:
+    encryption:
+      key: 'su_clave_base64'
+  ```
+
+- Gladys y sus nodos ESPHome deben estar en la **misma red local**.
+
+## Configuración
+
+### 1. La clave de cifrado
+
+Abra la pantalla de configuración de la integración y pegue en **Clave de cifrado** la clave declarada en `api: encryption: key:` de su YAML.
+
+Si **todos** sus nodos comparten la misma clave (el caso más habitual cuando se usa un `!secret` común), es lo único que hay que rellenar.
+
+> Si sus nodos no tienen ningún cifrado (`api:` sin bloque `encryption`), deje este campo vacío.
+
+### 2. Los nodos con una clave distinta
+
+Si algunos nodos tienen su propia clave, rellene **Claves por nodo**, un nodo por línea:
+
+```
+salon|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0=
+cocina|9xQm4Zt6R8s0T2u4V6w8X0y2Z4a6B8c0D2e4F6g8H0=
+```
+
+El nombre del nodo es el declarado en `esphome: name:`. Estas claves tienen prioridad sobre la clave por defecto.
+
+### 3. Descubra sus dispositivos
+
+Vaya a la pantalla **Descubrir** e inicie una búsqueda. Los nodos ESPHome presentes en su red aparecen allí con todas sus entidades. Añada los que quiera: **sin ninguna dirección IP que escribir**.
+
+La búsqueda utiliza mDNS (el protocolo con el que ESPHome se anuncia en la red). Es Gladys quien realiza la captura, porque la integración se ejecuta en un contenedor que nunca recibe ese tipo de tráfico.
+
+### 4. Si no se encuentra un nodo
+
+Algunas redes bloquean el mDNS (VLAN separadas, Wi-Fi con aislamiento de clientes, router que filtra el multicast). En ese caso, declare el nodo a mano en **Nodos añadidos a mano**, una dirección por línea:
+
+```
+salon.local
+192.168.1.42
+192.168.1.43:6054
+```
+
+![La integración combina tres fuentes: los dispositivos ya conocidos, la búsqueda mDNS y los nodos añadidos a mano; al conectarse, el nodo da su nombre real, que se convierte en su identificador](images/discovery.svg)
+
+El puerto es opcional (6053 por defecto). Una vez conectado, el nodo anuncia él mismo su nombre real: un nodo añadido por su dirección IP aparecerá con su nombre ESPHome, y seguirá funcionando aunque su dirección IP cambie después.
+
+> **Si ese nodo tiene una clave de cifrado propia**, indíquela en **Claves por nodo** usando **la misma dirección** que ha escrito aquí, y no su nombre ESPHome:
+>
+> ```
+> 192.168.1.42|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0=
+> ```
+>
+> El motivo es sencillo: su nombre solo se conoce una vez establecida la conexión, y la conexión necesita precisamente la clave. Esto no afecta a los nodos encontrados por la búsqueda ni a los que usan la clave por defecto.
+
+## Acciones disponibles
+
+- **Probar la conexión**: vuelve a lanzar una búsqueda completa y le indica cuántos nodos han respondido y cuántas funcionalidades están disponibles.
+- **Reconectar los nodos**: cierra todas las conexiones y las vuelve a abrir. Útil tras reprogramar un nodo o cambiar una clave.
+
+## Entender los sensores: la importancia de `device_class`
+
+Gladys necesita saber **qué mide** un sensor para mostrarlo correctamente (icono, unidad, gráfico). ESPHome transmite esa información mediante `device_class`.
+
+![Una entidad YAML se convierte en una o varias funcionalidades de Gladys: por su device_class, por la forma de su declaración o como medida genérica](images/mapping.svg)
+
+Con un `device_class`, su sensor llega tipado:
+
+```yaml
+sensor:
+  - platform: dht
+    temperature:
+      name: 'Temperatura salón'
+      device_class: temperature # -> sensor de temperatura en Gladys
+    humidity:
+      name: 'Humedad salón'
+      device_class: humidity # -> sensor de humedad en Gladys
+```
+
+**Sin `device_class`, el sensor aparece igualmente**, pero en la categoría genérica «Desconocido». Funciona y se guarda su historial, pero no tendrá ni icono ni categoría específica. Si uno de sus sensores aparece así, añada el `device_class` correspondiente en su YAML y vuelva a lanzar una búsqueda.
+
+Dos familias de sensores escapan a esta regla, porque ESPHome nunca les asigna un `device_class`: el vocabulario de Home Assistant no tiene palabra para lo que miden. La integración las reconoce por la forma de su declaración:
+
+| Declaración ESPHome                     | Categoría Gladys |
+| --------------------------------------- | ---------------- |
+| `unit_of_measurement: "°"`              | Ángulo           |
+| ninguna unidad y `accuracy_decimals: 0` | Contador         |
+
+Es el caso típico de los sensores mmWave (`ld2410`, `ld2450`…): sus contadores de objetivos (_Moving / Still / Presence Target Count_) llegan como **Contador**, y sus ángulos de objetivo (_Target-1 Angle_) como **Ángulo**. Un firmware que declara explícitamente `state_class: measurement_angle`, `total` o `total_increasing` se clasifica prioritariamente según esa declaración.
+
+Entre los `device_class` reconocidos están: `temperature`, `humidity`, `pressure`, `illuminance`, `battery`, `signal_strength`, `carbon_dioxide`, `pm25`, `pm10`, `power`, `energy`, `voltage`, `current`, `distance`, `moisture`, `speed`, `duration` y, para los sensores binarios: `motion`, `occupancy`, `door`, `window`, `smoke`, `gas`, `moisture`, `vibration`, `tamper`, `battery`, `lock`.
+
+## Solución de problemas
+
+**La búsqueda no encuentra ningún nodo**
+Compruebe que sus nodos estén encendidos y conectados al Wi-Fi. Si su red bloquea el mDNS, añádalos a mano (ver más arriba).
+
+**Se encuentra un nodo, pero no aparece en la lista**
+Casi siempre se trata de una clave de cifrado que no coincide. El nodo es visible en la red, pero rechaza la conexión. Compruebe la clave en su YAML y utilice **Claves por nodo** si difiere de la clave por defecto.
+
+**Un nodo desaparece y vuelve a aparecer**
+Es normal tras un reinicio del nodo (actualización OTA, corte de corriente). La integración se reconecta automáticamente, con un retardo creciente para no saturar la red.
+
+**Un dispositivo aparece como «inaccesible»**
+La conexión con ese nodo se ha perdido: nodo apagado, fuera del alcance del Wi-Fi o reiniciándose. La integración lo reintenta automáticamente. Tenga en cuenta también que un nodo ESPHome solo acepta un número limitado de clientes API simultáneos: si el mismo nodo ya está conectado a un Home Assistant o a una consola de registros de ESPHome abierta, puede rechazar una conexión más. Cierre los clientes innecesarios y utilice la acción **Reconectar los nodos**.
+
+**Un termostato solo muestra la temperatura medida, sin consigna**
+Es un termostato de dos consignas (`heat_cool`, una baja y una alta). Gladys gestiona una sola consigna por termostato: en lugar de mostrar un control deslizante que se quedaría en 0 y no controlaría nada, la integración solo publica la temperatura medida.
+
+**Una entidad no aparece en absoluto**
+Su tipo no tiene equivalente en Gladys (ver la tabla de funcionalidades), o está marcada como `internal: true` en su YAML; en ese caso, ESPHome no la expone en su API.

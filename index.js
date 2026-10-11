@@ -28,6 +28,7 @@ import {
   reconnectKnownNodes,
 } from './src/devices.js';
 import { PARAM_ADDRESS, RECONNECT_WATCHDOG_INTERVAL_MS } from './src/esphome/constants.js';
+import { MESSAGES, testOk, testFailed, reconnectOk, reconnectFailed } from './src/messages.js';
 
 const gladys = new GladysIntegration();
 const manager = new EsphomeManager();
@@ -64,12 +65,7 @@ async function publishDevices() {
   if (devices.length > 0) {
     await gladys.setConnectionStatus(true).catch(() => {});
   } else {
-    await gladys
-      .setConnectionStatus(false, {
-        en: 'No ESPHome node found. Check your encryption key, then run a scan.',
-        fr: 'Aucun nœud ESPHome trouvé. Vérifiez votre clé de chiffrement, puis lancez un scan.',
-      })
-      .catch(() => {});
+    await gladys.setConnectionStatus(false, MESSAGES.noNodeFound).catch(() => {});
   }
   return devices;
 }
@@ -158,22 +154,13 @@ gladys.onAction('test_connection', async () => {
   try {
     const devices = await publishDevices();
     if (devices.length === 0) {
-      return {
-        en: 'No ESPHome node answered. Check that your nodes are powered on and that the encryption key matches.',
-        fr: "Aucun nœud ESPHome n'a répondu. Vérifiez que vos nœuds sont allumés et que la clé de chiffrement correspond.",
-      };
+      return MESSAGES.testNoAnswer;
     }
     const featureCount = devices.reduce((total, device) => total + device.features.length, 0);
-    return {
-      en: `Connection OK: ${devices.length} node(s), ${featureCount} feature(s) available.`,
-      fr: `Connexion OK : ${devices.length} nœud(s), ${featureCount} fonctionnalité(s) disponible(s).`,
-    };
+    return testOk(devices.length, featureCount);
   } catch (e) {
     logger.error('ESPHome connection test failed', e);
-    return {
-      en: `Connection failed: ${e.message}`,
-      fr: `Échec de la connexion : ${e.message}`,
-    };
+    return testFailed(e.message);
   }
 });
 
@@ -183,16 +170,10 @@ gladys.onAction('reconnect', async () => {
   try {
     await manager.disconnectAll();
     const devices = await publishDevices();
-    return {
-      en: `Reconnected: ${devices.length} node(s) available.`,
-      fr: `Reconnexion effectuée : ${devices.length} nœud(s) disponible(s).`,
-    };
+    return reconnectOk(devices.length);
   } catch (e) {
     logger.error('ESPHome reconnection failed', e);
-    return {
-      en: `Reconnection failed: ${e.message}`,
-      fr: `Échec de la reconnexion : ${e.message}`,
-    };
+    return reconnectFailed(e.message);
   }
 });
 
@@ -216,12 +197,7 @@ gladys.on('connected', async () => {
     startReconnectWatchdog();
   } catch (err) {
     logger.error('Post-connection initialization failed', err);
-    await gladys
-      .setConnectionStatus(false, {
-        en: 'Initialization failed, check the integration logs.',
-        fr: "L'initialisation a échoué, consultez les logs de l'intégration.",
-      })
-      .catch(() => {});
+    await gladys.setConnectionStatus(false, MESSAGES.initFailed).catch(() => {});
   }
 });
 

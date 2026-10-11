@@ -465,6 +465,35 @@ export function describeEntity(entity) {
         },
       ];
 
+    case 'siren':
+      return [
+        {
+          key: 'state',
+          readOnly: false,
+          keepHistory: true,
+          category: DEVICE_FEATURE_CATEGORIES.SIREN,
+          type: DEVICE_FEATURE_TYPES.SIREN.BINARY,
+          min: 0,
+          max: 1,
+        },
+      ];
+
+    case 'valve':
+      return [
+        {
+          key: 'state',
+          readOnly: false,
+          keepHistory: true,
+          // Gladys has no generic valve pair (`water-valve` only declares the
+          // telemetry of one irrigation product), so a valve is the on/off it
+          // is in practice: open lets water through, closed does not.
+          category: DEVICE_FEATURE_CATEGORIES.SWITCH,
+          type: SWITCH.BINARY,
+          min: 0,
+          max: 1,
+        },
+      ];
+
     case 'button':
       return [
         {
@@ -524,7 +553,7 @@ export function describeEntity(entity) {
 
     default:
       // Entity types Gladys has no equivalent for (media_player, select, date,
-      // camera, valve…). Returning nothing keeps them out of the discovery
+      // camera, event…). Returning nothing keeps them out of the discovery
       // list rather than creating a feature that could never work.
       return [];
   }
@@ -688,14 +717,20 @@ function describeFan(entity) {
 }
 
 /**
- * Features of an ESPHome `climate`: the target temperature it accepts, and the
- * current temperature when the firmware measures one.
+ * Features of an ESPHome `climate`: the target temperature it accepts (single
+ * setpoint only), and the current temperature when the firmware measures one.
  * @param {object} entity - The ESPHome climate entity.
  * @returns {object[]} The feature descriptors.
  */
 function describeClimate(entity) {
-  const features = [
-    {
+  const features = [];
+
+  // A two-point climate (heat_cool) holds a LOW and a HIGH setpoint and ignores
+  // the single `target_temperature`: a Gladys thermostat slider bound to it
+  // would read 0 and move nothing. Gladys has one setpoint per thermostat, so
+  // such a climate only gets its measured temperature.
+  if (!entity.supportsTwoPointTargetTemperature) {
+    features.push({
       key: 'target_temperature',
       readOnly: false,
       keepHistory: true,
@@ -710,8 +745,8 @@ function describeClimate(entity) {
         typeof entity.visualMaxTemperature === 'number'
           ? Math.round(entity.visualMaxTemperature)
           : 40,
-    },
-  ];
+    });
+  }
 
   if (entity.supportsCurrentTemperature) {
     features.push({
