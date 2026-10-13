@@ -23,9 +23,10 @@
   <!-- Integration -->
   <rect x="390" y="40" width="250" height="120" rx="10" fill="#fff8e6" stroke="#bf8700" stroke-width="1.5"/>
   <text x="515" y="78" text-anchor="middle" font-size="16" font-weight="600" fill="#6b4600">ESPHome integration</text>
-  <text x="515" y="102" text-anchor="middle" font-size="12" fill="#24292f">its own container,</text>
-  <text x="515" y="122" text-anchor="middle" font-size="12" fill="#24292f">one open session per node,</text>
-  <text x="515" y="142" text-anchor="middle" font-size="12" fill="#24292f">states batched every 200 ms</text>
+  <text x="515" y="98" text-anchor="middle" font-size="12" fill="#24292f">its own container,</text>
+  <text x="515" y="114" text-anchor="middle" font-size="12" fill="#24292f">one open session per node,</text>
+  <text x="515" y="130" text-anchor="middle" font-size="12" fill="#24292f">changed states every 200 ms,</text>
+  <text x="515" y="146" text-anchor="middle" font-size="12" fill="#24292f">events and outages → scenes</text>
 
   <!-- Gladys <-> integration -->
   <line x1="270" y1="100" x2="388" y2="100" stroke="#57606a" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
