@@ -19,7 +19,7 @@ import {
   PARAM_ADDRESS,
   PARAM_VERSION,
   STATE_FLUSH_DELAY_MS,
-  MAX_STATES_PER_REQUEST,
+  STATE_HEARTBEAT_MS,
   SCAN_RETRY_MARGIN_MS,
 } from './esphome/constants.js';
 import { resolveEncryptionKey } from './config.js';
@@ -529,7 +529,16 @@ async function enqueueStates(gladys, states) {
 }
 
 /**
- * Send every pending state, in batches the SDK accepts.
+ * Send every pending state that changed since the last one published.
+ *
+ * Most ESPHome sensors report on a fixed `update_interval`, changed or not: a
+ * temperature that holds at 21.5 still arrives every minute, and each copy
+ * counts against the core's states rate limit. `publishChangedStates` drops
+ * the repeats (a binary transition inside the batch is kept: it compares each
+ * entry with the one before it), re-sends an unchanged value once an hour so
+ * a dashboard never looks stale, and splits the batches the core accepts. It
+ * forgets what it sent when the user creates or deletes a device, so a new
+ * device always receives its first values.
  * @param {object} gladys - The Gladys SDK instance.
  * @returns {Promise<void>} Resolves once every batch is sent.
  * @example
@@ -546,17 +555,15 @@ async function flushPendingStates(gladys) {
     .map(({ keepTransitions: _drop, ...state }) => state);
   pendingStates.clear();
 
-  for (let i = 0; i < states.length; i += MAX_STATES_PER_REQUEST) {
-    const batch = states.slice(i, i + MAX_STATES_PER_REQUEST);
-    try {
-      await gladys.publishStates(batch);
-    } catch (e) {
-      // A failed batch is dropped rather than retried: ESPHome pushes states
-      // continuously, so the next event carries a fresher value than the one we
-      // would be replaying — and retrying into a rate limit makes it worse.
-      logger.warn(`Publishing ${batch.length} state(s) failed: ${e.message}`);
-      logger.debug(e);
-    }
+  try {
+    await gladys.publishChangedStates(states, { heartbeat: STATE_HEARTBEAT_MS });
+  } catch (e) {
+    // A failed batch is dropped rather than retried: ESPHome pushes states
+    // continuously, so the next event carries a fresher value than the one we
+    // would be replaying — and retrying into a rate limit makes it worse. The
+    // SDK forgets what Gladys refused, so the next reading goes through.
+    logger.warn(`Publishing ${states.length} state(s) failed: ${e.message}`);
+    logger.debug(e);
   }
 }
 

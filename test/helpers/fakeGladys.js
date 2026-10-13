@@ -33,6 +33,13 @@ export function fakeGladys({ selector = 'ext-dev-esphome', devices = [], scanRes
     publishStates: async (states) => {
       published.states.push(...states);
     },
+    // The deduplication itself is the SDK's (and covered by test/app.test.js
+    // against its real fake); here it only routes to publishStates, so a test
+    // that replaces publishStates still sees every flush.
+    async publishChangedStates(states) {
+      await this.publishStates(states);
+      return { success: true, count: states.length };
+    },
     publishDiscoveredDevices: async (list) => {
       published.devices = list;
     },

@@ -46,9 +46,21 @@ export const RECONNECT_MAX_DELAY_MS = 300000;
 // dashboard, long enough to collapse a burst.
 export const STATE_FLUSH_DELAY_MS = 200;
 
-// Maximum states the SDK accepts in one `publishStates` call. Anything beyond
-// is split across requests rather than rejected wholesale.
-export const MAX_STATES_PER_REQUEST = 100;
+// An unchanged reading is published again once this old, so the dashboard and
+// the history never look frozen while a sensor holds a steady value. Anything
+// shorter only spends the core's states rate limit on repeats.
+export const STATE_HEARTBEAT_MS = 60 * 60 * 1000;
+
+// How long a node must stay disconnected before the `node_offline` scene
+// trigger fires. ESPHome nodes drop their API session on every OTA update,
+// reboot or Wi-Fi roam and are back within seconds; an alert for each of those
+// would teach the user to ignore it.
+export const NODE_OFFLINE_GRACE_MS = 60 * 1000;
+
+// How long the `event_fired` trigger stays quiet on a node after a scene ran
+// one of its actions. An action that fires an ESPHome event would otherwise
+// start the very scene that called it, again and again.
+export const SCENE_ACTION_QUIET_MS = 2000;
 
 // Extra wait before retrying a scan the core refused because another one is
 // already running. The previous scan holds the slot for its own duration; this
