@@ -16,6 +16,7 @@
 
 import { openEspHomeClient, entityId } from 'esphome-client';
 import { createLogger } from '@gladysassistant/integration-sdk';
+import { encodeActionArguments } from './actions.js';
 import {
   DEFAULT_PORT,
   RECONNECT_INITIAL_DELAY_MS,
@@ -64,6 +65,15 @@ export class EsphomeManager {
      * @type {Map<string, Promise<object>>}
      */
     this.pending = new Map();
+    /**
+     * Last state event of each entity, per node: `Map<node, Map<entityKey,
+     * { entity, event }>>`. ESPHome only pushes a state when it CHANGES, so a
+     * device the user creates after the node reported its relay ON would show
+     * nothing until the relay moves again. Replaying this cache when the
+     * device is created is what fills it right away.
+     * @type {Map<string, Map<number, { entity: object, event: object }>>}
+     */
+    this.lastStates = new Map();
     /** @type {Function|null} */
     this.stateCallback = null;
     /** @type {Function|null} */
@@ -184,6 +194,7 @@ export class EsphomeManager {
         logger.debug(`Ignored state from "${name}": unknown entity key ${event.key}`);
         return;
       }
+      this.remember(name, entity, event);
       this.stateCallback(name, entity, event);
     });
 
@@ -256,6 +267,7 @@ export class EsphomeManager {
       this.clients.delete(from);
       this.addresses.delete(from);
       this.entityKeys.delete(from);
+      this.lastStates.delete(from);
       this.nodeNames.delete(client);
       client.disconnect();
       return existing;
@@ -272,6 +284,11 @@ export class EsphomeManager {
     if (index) {
       this.entityKeys.set(to, index);
       this.entityKeys.delete(from);
+    }
+    const states = this.lastStates.get(from);
+    if (states) {
+      this.lastStates.set(to, states);
+      this.lastStates.delete(from);
     }
     // The callbacks captured the old name in their closure; point them at the
     // real one so later states and lifecycle events carry it.
@@ -372,6 +389,82 @@ export class EsphomeManager {
   }
 
   /**
+   * Keep the last state an entity reported (see `lastStates`).
+   * @param {string} nodeName - The ESPHome node name.
+   * @param {object} entity - The entity.
+   * @param {object} event - The state event.
+   * @returns {void}
+   * @example
+   * manager.remember('salon', entity, { key: 1, state: true });
+   */
+  remember(nodeName, entity, event) {
+    // An `event` entity reports something that happened, not a state: never
+    // replay it later as if it just happened again.
+    if (entity.type === 'event') {
+      return;
+    }
+    const key = String(nodeName).toLowerCase();
+    if (!this.lastStates.has(key)) {
+      this.lastStates.set(key, new Map());
+    }
+    this.lastStates.get(key).set(entity.key, { entity, event });
+  }
+
+  /**
+   * The last state each entity of a node reported, to publish again what
+   * Gladys could not take before the device existed.
+   * @param {string} nodeName - The ESPHome node name.
+   * @returns {Array<{ entity: object, event: object }>} The last states.
+   * @example
+   * manager.lastStatesOf('salon').forEach(({ entity, event }) => publish(entity, event));
+   */
+  lastStatesOf(nodeName) {
+    return [...(this.lastStates.get(String(nodeName).toLowerCase())?.values() || [])];
+  }
+
+  /**
+   * List the user-defined actions a connected node declares (`api: actions:`).
+   * @param {string} nodeName - The ESPHome node name.
+   * @returns {Array<{ key: number, name: string, args: object[] }>} The actions.
+   * @example
+   * manager.listActions('salon'); // [{ key: 1, name: 'beep', args: [] }]
+   */
+  listActions(nodeName) {
+    const client = this.getClient(nodeName);
+    if (!client || !client.services) {
+      return [];
+    }
+    return client.services.list() || [];
+  }
+
+  /**
+   * Run a user-defined action of a node. The native API acknowledges nothing
+   * on most firmwares: a resolved call means "sent to a connected node".
+   * @param {string} nodeName - The ESPHome node name.
+   * @param {string} actionName - The action name, as declared in the YAML.
+   * @param {Record<string, unknown>} values - The arguments by name.
+   * @returns {{ key: number, name: string, args: object[] }} The action run.
+   * @example
+   * manager.runAction('salon', 'play_rtttl', { song: 'two short:d=4,o=5,b=100:16e6,16e6' });
+   */
+  runAction(nodeName, actionName, values) {
+    const client = this.getClient(nodeName);
+    if (!client) {
+      throw new Error(`ESPHome node "${nodeName}" is not connected`);
+    }
+    const actions = this.listActions(nodeName);
+    const action = actions.find((candidate) => candidate.name === actionName);
+    if (!action) {
+      const names = actions.map((candidate) => candidate.name).join(', ');
+      throw new Error(
+        `ESPHome node "${nodeName}" declares no action "${actionName}" (available: ${names || 'none'})`,
+      );
+    }
+    client.services.execute(action.key, encodeActionArguments(action, values));
+    return action;
+  }
+
+  /**
    * Disconnect one node and forget its client.
    * @param {string} nodeName - The ESPHome node name.
    * @returns {Promise<void>} Resolves once disconnected.
@@ -386,6 +479,7 @@ export class EsphomeManager {
     }
     this.clients.delete(key);
     this.entityKeys.delete(key);
+    this.lastStates.delete(key);
     this.addresses.delete(key);
     this.nodeNames.delete(client);
     try {

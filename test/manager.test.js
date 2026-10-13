@@ -123,3 +123,49 @@ test('a failed attempt is forgotten, so the next connect retries', async () => {
   await assert.rejects(manager.connect(node, null, 10), /refused/);
   assert.equal(opened, 2);
 });
+
+test('a user-defined action runs with typed arguments, and an unknown one names the available ones', () => {
+  const manager = new EsphomeManager();
+  const client = attach(manager, 'salon');
+  const executed = [];
+  client.services = {
+    list: () => [{ key: 7, name: 'beep', args: [{ name: 'times', type: 1 }] }],
+    execute: (key, args) => executed.push({ key, args }),
+  };
+
+  manager.runAction('salon', 'beep', { times: '2' });
+  assert.deepEqual(executed, [{ key: 7, args: [{ intValue: 2 }] }]);
+  assert.throws(
+    () => manager.runAction('salon', 'boop', {}),
+    /no action "boop" \(available: beep\)/,
+  );
+  assert.throws(() => manager.runAction('cuisine', 'beep', {}), /not connected/);
+});
+
+test('the last states of a node follow its rename and are forgotten on disconnect', async () => {
+  const manager = new EsphomeManager();
+  const client = attach(manager, '192.168.1.42');
+  client.disconnectAsync = async () => {};
+  manager.lastStates.set(
+    '192.168.1.42',
+    new Map([[1, { entity: { id: 'switch-relay' }, event: { key: 1 } }]]),
+  );
+
+  manager.rename('192.168.1.42', 'salon');
+  assert.equal(manager.lastStatesOf('salon').length, 1);
+
+  await manager.disconnect('salon');
+  assert.deepEqual(manager.lastStatesOf('salon'), []);
+});
+
+test('only the latest state of each entity is kept, and never an event', () => {
+  const manager = new EsphomeManager();
+  const relay = { key: 1, type: 'switch', id: 'switch-relay' };
+  const button = { key: 2, type: 'event', id: 'event-button' };
+  manager.remember('Salon', relay, { key: 1, state: true });
+  manager.remember('salon', relay, { key: 1, state: false });
+  manager.remember('salon', button, { key: 2, eventType: 'single' });
+  assert.deepEqual(manager.lastStatesOf('SALON'), [
+    { entity: relay, event: { key: 1, state: false } },
+  ]);
+});

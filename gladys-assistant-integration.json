@@ -10,8 +10,8 @@
   },
   "version": "1.1.0",
   "docker_image": "ghcr.io/william-de71/gladys-esphome:1.1.0",
-  "gladys_version": ">=4.86.0",
-  "cover_image": "https://raw.githubusercontent.com/William-De71/gladys-esphome/master/cover.jpg",
+  "gladys_version": ">=5.1.0",
+  "cover_image": "https://raw.githubusercontent.com/William-De71/gladys-esphome/main/cover.jpg",
   "categories": ["protocols", "environment", "lighting"],
   "transports": ["local"],
   "network_discovery": [
@@ -194,6 +194,375 @@
         "es": "Reconectar los nodos"
       },
       "timeout_seconds": 60
+    }
+  ],
+  "scene_triggers": [
+    {
+      "key": "event_fired",
+      "label": {
+        "en": "ESPHome event",
+        "fr": "Événement ESPHome",
+        "de": "ESPHome-Ereignis",
+        "es": "Evento de ESPHome"
+      },
+      "description": {
+        "en": "An `event` entity of a node fired: a button clicked once, twice or held, a doorbell, a remote code received.",
+        "fr": "Une entité `event` d'un nœud s'est déclenchée : un bouton cliqué une ou deux fois ou maintenu, une sonnette, un code de télécommande reçu.",
+        "de": "Eine `event`-Entität eines Knotens hat ausgelöst: eine Taste einmal, zweimal oder lange gedrückt, eine Türklingel, ein empfangener Fernbedienungscode.",
+        "es": "Una entidad `event` de un nodo se ha activado: un botón pulsado una o dos veces o mantenido, un timbre, un código de mando recibido."
+      },
+      "fields": [
+        {
+          "key": "node",
+          "type": "string",
+          "label": {
+            "en": "Node",
+            "fr": "Nœud",
+            "de": "Knoten",
+            "es": "Nodo"
+          },
+          "description": {
+            "en": "The ESPHome name of the node (`esphome: name:` in its YAML). Leave empty for every node.",
+            "fr": "Le nom ESPHome du nœud (`esphome: name:` dans son YAML). Laissez vide pour tous les nœuds.",
+            "de": "Der ESPHome-Name des Knotens (`esphome: name:` in seiner YAML). Leer lassen für alle Knoten.",
+            "es": "El nombre ESPHome del nodo (`esphome: name:` en su YAML). Déjelo vacío para todos los nodos."
+          },
+          "placeholder": {
+            "en": "salon",
+            "fr": "salon",
+            "de": "wohnzimmer",
+            "es": "salon"
+          }
+        },
+        {
+          "key": "entity",
+          "type": "string",
+          "label": {
+            "en": "Entity",
+            "fr": "Entité",
+            "de": "Entität",
+            "es": "Entidad"
+          },
+          "description": {
+            "en": "The name of the event entity, as written in the YAML (`name:`). Leave empty for every entity.",
+            "fr": "Le nom de l'entité événement, tel qu'écrit dans le YAML (`name:`). Laissez vide pour toutes les entités.",
+            "de": "Der Name der Ereignis-Entität, wie in der YAML angegeben (`name:`). Leer lassen für alle Entitäten.",
+            "es": "El nombre de la entidad de evento, tal como figura en el YAML (`name:`). Déjelo vacío para todas las entidades."
+          },
+          "placeholder": {
+            "en": "Button",
+            "fr": "Bouton",
+            "de": "Taste",
+            "es": "Botón"
+          }
+        },
+        {
+          "key": "event_type",
+          "type": "string",
+          "label": {
+            "en": "Event type",
+            "fr": "Type d'événement",
+            "de": "Ereignistyp",
+            "es": "Tipo de evento"
+          },
+          "description": {
+            "en": "One of the `event_types` declared in the YAML (`single`, `double`, `long`…). Leave empty for every type.",
+            "fr": "Un des `event_types` déclarés dans le YAML (`single`, `double`, `long`…). Laissez vide pour tous les types.",
+            "de": "Einer der in der YAML angegebenen `event_types` (`single`, `double`, `long` …). Leer lassen für alle Typen.",
+            "es": "Uno de los `event_types` declarados en el YAML (`single`, `double`, `long`…). Déjelo vacío para todos los tipos."
+          },
+          "placeholder": {
+            "en": "double",
+            "fr": "double",
+            "de": "double",
+            "es": "double"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "node",
+          "type": "string",
+          "label": {
+            "en": "Node",
+            "fr": "Nœud",
+            "de": "Knoten",
+            "es": "Nodo"
+          }
+        },
+        {
+          "key": "entity",
+          "type": "string",
+          "label": {
+            "en": "Entity",
+            "fr": "Entité",
+            "de": "Entität",
+            "es": "Entidad"
+          }
+        },
+        {
+          "key": "entity_id",
+          "type": "string",
+          "label": {
+            "en": "Entity identifier",
+            "fr": "Identifiant de l'entité",
+            "de": "Kennung der Entität",
+            "es": "Identificador de la entidad"
+          }
+        },
+        {
+          "key": "event_type",
+          "type": "string",
+          "label": {
+            "en": "Event type",
+            "fr": "Type d'événement",
+            "de": "Ereignistyp",
+            "es": "Tipo de evento"
+          }
+        }
+      ]
+    },
+    {
+      "key": "node_offline",
+      "label": {
+        "en": "ESPHome node offline",
+        "fr": "Nœud ESPHome hors ligne",
+        "de": "ESPHome-Knoten offline",
+        "es": "Nodo ESPHome desconectado"
+      },
+      "description": {
+        "en": "A node stayed disconnected for one minute. A reboot or an OTA update that is over within the minute fires nothing.",
+        "fr": "Un nœud est resté déconnecté pendant une minute. Un redémarrage ou une mise à jour OTA terminés dans la minute ne déclenchent rien.",
+        "de": "Ein Knoten war eine Minute lang getrennt. Ein Neustart oder ein OTA-Update, das innerhalb der Minute abgeschlossen ist, löst nichts aus.",
+        "es": "Un nodo ha permanecido desconectado durante un minuto. Un reinicio o una actualización OTA que terminan en ese minuto no activan nada."
+      },
+      "fields": [
+        {
+          "key": "node",
+          "type": "string",
+          "label": {
+            "en": "Node",
+            "fr": "Nœud",
+            "de": "Knoten",
+            "es": "Nodo"
+          },
+          "description": {
+            "en": "The ESPHome name of the node (`esphome: name:` in its YAML). Leave empty for every node.",
+            "fr": "Le nom ESPHome du nœud (`esphome: name:` dans son YAML). Laissez vide pour tous les nœuds.",
+            "de": "Der ESPHome-Name des Knotens (`esphome: name:` in seiner YAML). Leer lassen für alle Knoten.",
+            "es": "El nombre ESPHome del nodo (`esphome: name:` en su YAML). Déjelo vacío para todos los nodos."
+          },
+          "placeholder": {
+            "en": "salon",
+            "fr": "salon",
+            "de": "wohnzimmer",
+            "es": "salon"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "node",
+          "type": "string",
+          "label": {
+            "en": "Node",
+            "fr": "Nœud",
+            "de": "Knoten",
+            "es": "Nodo"
+          }
+        },
+        {
+          "key": "address",
+          "type": "string",
+          "label": {
+            "en": "Address",
+            "fr": "Adresse",
+            "de": "Adresse",
+            "es": "Dirección"
+          }
+        }
+      ]
+    },
+    {
+      "key": "node_online",
+      "label": {
+        "en": "ESPHome node back online",
+        "fr": "Nœud ESPHome de retour en ligne",
+        "de": "ESPHome-Knoten wieder online",
+        "es": "Nodo ESPHome conectado de nuevo"
+      },
+      "description": {
+        "en": "A node reported offline is connected again.",
+        "fr": "Un nœud signalé hors ligne est de nouveau connecté.",
+        "de": "Ein als offline gemeldeter Knoten ist wieder verbunden.",
+        "es": "Un nodo notificado como desconectado vuelve a estar conectado."
+      },
+      "fields": [
+        {
+          "key": "node",
+          "type": "string",
+          "label": {
+            "en": "Node",
+            "fr": "Nœud",
+            "de": "Knoten",
+            "es": "Nodo"
+          },
+          "description": {
+            "en": "The ESPHome name of the node (`esphome: name:` in its YAML). Leave empty for every node.",
+            "fr": "Le nom ESPHome du nœud (`esphome: name:` dans son YAML). Laissez vide pour tous les nœuds.",
+            "de": "Der ESPHome-Name des Knotens (`esphome: name:` in seiner YAML). Leer lassen für alle Knoten.",
+            "es": "El nombre ESPHome del nodo (`esphome: name:` en su YAML). Déjelo vacío para todos los nodos."
+          },
+          "placeholder": {
+            "en": "salon",
+            "fr": "salon",
+            "de": "wohnzimmer",
+            "es": "salon"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "node",
+          "type": "string",
+          "label": {
+            "en": "Node",
+            "fr": "Nœud",
+            "de": "Knoten",
+            "es": "Nodo"
+          }
+        },
+        {
+          "key": "address",
+          "type": "string",
+          "label": {
+            "en": "Address",
+            "fr": "Adresse",
+            "de": "Adresse",
+            "es": "Dirección"
+          }
+        },
+        {
+          "key": "offline_minutes",
+          "type": "number",
+          "label": {
+            "en": "Minutes offline",
+            "fr": "Minutes hors ligne",
+            "de": "Minuten offline",
+            "es": "Minutos desconectado"
+          }
+        }
+      ]
+    }
+  ],
+  "scene_actions": [
+    {
+      "key": "run_action",
+      "label": {
+        "en": "Run an ESPHome action",
+        "fr": "Exécuter une action ESPHome",
+        "de": "ESPHome-Aktion ausführen",
+        "es": "Ejecutar una acción de ESPHome"
+      },
+      "description": {
+        "en": "Runs an action declared under `api: actions:` in the YAML of a node: play a melody, show a message, start a script.",
+        "fr": "Exécute une action déclarée sous `api: actions:` dans le YAML d'un nœud : jouer une mélodie, afficher un message, lancer un script.",
+        "de": "Führt eine Aktion aus, die in der YAML eines Knotens unter `api: actions:` angegeben ist: eine Melodie abspielen, eine Nachricht anzeigen, ein Skript starten.",
+        "es": "Ejecuta una acción declarada en `api: actions:` en el YAML de un nodo: reproducir una melodía, mostrar un mensaje, lanzar un script."
+      },
+      "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "node",
+          "type": "string",
+          "label": {
+            "en": "Node",
+            "fr": "Nœud",
+            "de": "Knoten",
+            "es": "Nodo"
+          },
+          "description": {
+            "en": "The ESPHome name of the node (`esphome: name:`), or the name of its device in Gladys.",
+            "fr": "Le nom ESPHome du nœud (`esphome: name:`), ou le nom de son appareil dans Gladys.",
+            "de": "Der ESPHome-Name des Knotens (`esphome: name:`) oder der Name seines Geräts in Gladys.",
+            "es": "El nombre ESPHome del nodo (`esphome: name:`), o el nombre de su dispositivo en Gladys."
+          },
+          "placeholder": {
+            "en": "salon",
+            "fr": "salon",
+            "de": "wohnzimmer",
+            "es": "salon"
+          },
+          "required": true
+        },
+        {
+          "key": "action",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Action",
+            "fr": "Action",
+            "de": "Aktion",
+            "es": "Acción"
+          },
+          "description": {
+            "en": "The `action:` name declared under `api: actions:`.",
+            "fr": "Le nom `action:` déclaré sous `api: actions:`.",
+            "de": "Der unter `api: actions:` angegebene `action:`-Name.",
+            "es": "El nombre `action:` declarado en `api: actions:`."
+          },
+          "placeholder": {
+            "en": "play_rtttl",
+            "fr": "play_rtttl",
+            "de": "play_rtttl",
+            "es": "play_rtttl"
+          }
+        },
+        {
+          "key": "arguments",
+          "type": "string",
+          "label": {
+            "en": "Arguments",
+            "fr": "Arguments",
+            "de": "Argumente",
+            "es": "Argumentos"
+          },
+          "description": {
+            "en": "A JSON object with one entry per `variables:` of the action. Scene variables are accepted. Leave empty for an action without variables.",
+            "fr": "Un objet JSON avec une entrée par `variables:` de l'action. Les variables de scène sont acceptées. Laissez vide pour une action sans variables.",
+            "de": "Ein JSON-Objekt mit einem Eintrag pro `variables:` der Aktion. Szenenvariablen sind erlaubt. Leer lassen für eine Aktion ohne Variablen.",
+            "es": "Un objeto JSON con una entrada por cada `variables:` de la acción. Se aceptan variables de escena. Déjelo vacío para una acción sin variables."
+          },
+          "placeholder": {
+            "en": "{\"message\": \"Hello\"}",
+            "fr": "{\"message\": \"Bonjour\"}",
+            "de": "{\"message\": \"Hallo\"}",
+            "es": "{\"message\": \"Hola\"}"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "key": "node",
+          "type": "string",
+          "label": {
+            "en": "Node",
+            "fr": "Nœud",
+            "de": "Knoten",
+            "es": "Nodo"
+          }
+        },
+        {
+          "key": "action",
+          "type": "string",
+          "label": {
+            "en": "Action",
+            "fr": "Action",
+            "de": "Aktion",
+            "es": "Acción"
+          }
+        }
+      ]
     }
   ]
 }
