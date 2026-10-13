@@ -1,0 +1,51 @@
+{
+  "version": "1.1.0",
+  "type": "device",
+  "transports": ["local"],
+  "network_discovery": [
+    {
+      "type": "mdns",
+      "service": "_esphomelib._tcp"
+    }
+  ],
+  "config_schema": [
+    {
+      "key": "intro",
+      "type": "section",
+      "required": false
+    },
+    {
+      "key": "encryption_key",
+      "type": "secret",
+      "required": false
+    },
+    {
+      "key": "advanced",
+      "type": "section",
+      "required": false
+    },
+    {
+      "key": "encryption_keys",
+      "type": "secret",
+      "required": false
+    },
+    {
+      "key": "nodes",
+      "type": "string",
+      "required": false
+    },
+    {
+      "key": "scan_duration",
+      "type": "number",
+      "required": false,
+      "default": 8
+    },
+    {
+      "key": "connection_timeout",
+      "type": "number",
+      "required": false,
+      "default": 10
+    }
+  ],
+  "actions": ["test_connection", "reconnect"]
+}

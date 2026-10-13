@@ -1,0 +1,526 @@
+[
+  {
+    "type": "sensor",
+    "objectId": "temperature",
+    "id": "sensor-temperature",
+    "name": "temperature",
+    "deviceClass": "temperature",
+    "unitOfMeasurement": "°C"
+  },
+  {
+    "type": "sensor",
+    "objectId": "humidity",
+    "id": "sensor-humidity",
+    "name": "humidity",
+    "deviceClass": "humidity",
+    "unitOfMeasurement": "%"
+  },
+  {
+    "type": "sensor",
+    "objectId": "pressure",
+    "id": "sensor-pressure",
+    "name": "pressure",
+    "deviceClass": "pressure",
+    "unitOfMeasurement": "hPa"
+  },
+  {
+    "type": "sensor",
+    "objectId": "atmospheric_pressure",
+    "id": "sensor-atmospheric_pressure",
+    "name": "atmospheric pressure",
+    "deviceClass": "atmospheric_pressure",
+    "unitOfMeasurement": "hPa"
+  },
+  {
+    "type": "sensor",
+    "objectId": "illuminance",
+    "id": "sensor-illuminance",
+    "name": "illuminance",
+    "deviceClass": "illuminance",
+    "unitOfMeasurement": "lx"
+  },
+  {
+    "type": "sensor",
+    "objectId": "battery",
+    "id": "sensor-battery",
+    "name": "battery",
+    "deviceClass": "battery",
+    "unitOfMeasurement": "%"
+  },
+  {
+    "type": "sensor",
+    "objectId": "signal_strength",
+    "id": "sensor-signal_strength",
+    "name": "signal strength",
+    "deviceClass": "signal_strength",
+    "unitOfMeasurement": "dBm"
+  },
+  {
+    "type": "sensor",
+    "objectId": "carbon_dioxide",
+    "id": "sensor-carbon_dioxide",
+    "name": "carbon dioxide",
+    "deviceClass": "carbon_dioxide",
+    "unitOfMeasurement": "ppm"
+  },
+  {
+    "type": "sensor",
+    "objectId": "carbon_monoxide",
+    "id": "sensor-carbon_monoxide",
+    "name": "carbon monoxide",
+    "deviceClass": "carbon_monoxide"
+  },
+  {
+    "type": "sensor",
+    "objectId": "pm25",
+    "id": "sensor-pm25",
+    "name": "pm25",
+    "deviceClass": "pm25",
+    "unitOfMeasurement": "µg/m³"
+  },
+  {
+    "type": "sensor",
+    "objectId": "pm10",
+    "id": "sensor-pm10",
+    "name": "pm10",
+    "deviceClass": "pm10",
+    "unitOfMeasurement": "µg/m³"
+  },
+  {
+    "type": "sensor",
+    "objectId": "volatile_organic_compounds",
+    "id": "sensor-volatile_organic_compounds",
+    "name": "volatile organic compounds",
+    "deviceClass": "volatile_organic_compounds"
+  },
+  {
+    "type": "sensor",
+    "objectId": "volatile_organic_compounds_parts",
+    "id": "sensor-volatile_organic_compounds_parts",
+    "name": "volatile organic compounds parts",
+    "deviceClass": "volatile_organic_compounds_parts"
+  },
+  {
+    "type": "sensor",
+    "objectId": "aqi",
+    "id": "sensor-aqi",
+    "name": "aqi",
+    "deviceClass": "aqi"
+  },
+  {
+    "type": "sensor",
+    "objectId": "distance",
+    "id": "sensor-distance",
+    "name": "distance",
+    "deviceClass": "distance",
+    "unitOfMeasurement": "m"
+  },
+  {
+    "type": "sensor",
+    "objectId": "moisture",
+    "id": "sensor-moisture",
+    "name": "moisture",
+    "deviceClass": "moisture"
+  },
+  {
+    "type": "sensor",
+    "objectId": "ph",
+    "id": "sensor-ph",
+    "name": "ph",
+    "deviceClass": "ph"
+  },
+  {
+    "type": "sensor",
+    "objectId": "precipitation",
+    "id": "sensor-precipitation",
+    "name": "precipitation",
+    "deviceClass": "precipitation",
+    "unitOfMeasurement": "mm"
+  },
+  {
+    "type": "sensor",
+    "objectId": "precipitation_intensity",
+    "id": "sensor-precipitation_intensity",
+    "name": "precipitation intensity",
+    "deviceClass": "precipitation_intensity",
+    "unitOfMeasurement": "mm/h"
+  },
+  {
+    "type": "sensor",
+    "objectId": "sound_pressure",
+    "id": "sensor-sound_pressure",
+    "name": "sound pressure",
+    "deviceClass": "sound_pressure",
+    "unitOfMeasurement": "dB"
+  },
+  {
+    "type": "sensor",
+    "objectId": "speed",
+    "id": "sensor-speed",
+    "name": "speed",
+    "deviceClass": "speed",
+    "unitOfMeasurement": "km/h"
+  },
+  {
+    "type": "sensor",
+    "objectId": "wind_speed",
+    "id": "sensor-wind_speed",
+    "name": "wind speed",
+    "deviceClass": "wind_speed",
+    "unitOfMeasurement": "km/h"
+  },
+  {
+    "type": "sensor",
+    "objectId": "duration",
+    "id": "sensor-duration",
+    "name": "duration",
+    "deviceClass": "duration",
+    "unitOfMeasurement": "s"
+  },
+  {
+    "type": "sensor",
+    "objectId": "data_size",
+    "id": "sensor-data_size",
+    "name": "data size",
+    "deviceClass": "data_size",
+    "unitOfMeasurement": "MB"
+  },
+  {
+    "type": "sensor",
+    "objectId": "data_rate",
+    "id": "sensor-data_rate",
+    "name": "data rate",
+    "deviceClass": "data_rate"
+  },
+  {
+    "type": "sensor",
+    "objectId": "power",
+    "id": "sensor-power",
+    "name": "power",
+    "deviceClass": "power",
+    "unitOfMeasurement": "W"
+  },
+  {
+    "type": "sensor",
+    "objectId": "energy",
+    "id": "sensor-energy",
+    "name": "energy",
+    "deviceClass": "energy",
+    "unitOfMeasurement": "kWh"
+  },
+  {
+    "type": "sensor",
+    "objectId": "voltage",
+    "id": "sensor-voltage",
+    "name": "voltage",
+    "deviceClass": "voltage",
+    "unitOfMeasurement": "V"
+  },
+  {
+    "type": "sensor",
+    "objectId": "current",
+    "id": "sensor-current",
+    "name": "current",
+    "deviceClass": "current",
+    "unitOfMeasurement": "A"
+  },
+  {
+    "type": "sensor",
+    "objectId": "plain_value",
+    "id": "sensor-plain_value",
+    "name": "plain value",
+    "unitOfMeasurement": "foo",
+    "accuracyDecimals": 2
+  },
+  {
+    "type": "sensor",
+    "objectId": "target_1_angle",
+    "id": "sensor-target_1_angle",
+    "name": "target 1 angle",
+    "unitOfMeasurement": "°",
+    "accuracyDecimals": 1
+  },
+  {
+    "type": "sensor",
+    "objectId": "moving_target_count",
+    "id": "sensor-moving_target_count",
+    "name": "moving target count",
+    "accuracyDecimals": 0
+  },
+  {
+    "type": "sensor",
+    "objectId": "explicit_angle",
+    "id": "sensor-explicit_angle",
+    "name": "explicit angle",
+    "stateClass": 4
+  },
+  {
+    "type": "sensor",
+    "objectId": "pulse_total",
+    "id": "sensor-pulse_total",
+    "name": "pulse total",
+    "stateClass": 2
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "motion",
+    "id": "binary_sensor-motion",
+    "name": "motion",
+    "deviceClass": "motion"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "occupancy",
+    "id": "binary_sensor-occupancy",
+    "name": "occupancy",
+    "deviceClass": "occupancy"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "presence",
+    "id": "binary_sensor-presence",
+    "name": "presence",
+    "deviceClass": "presence"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "door",
+    "id": "binary_sensor-door",
+    "name": "door",
+    "deviceClass": "door"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "garage_door",
+    "id": "binary_sensor-garage_door",
+    "name": "garage door",
+    "deviceClass": "garage_door"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "window",
+    "id": "binary_sensor-window",
+    "name": "window",
+    "deviceClass": "window"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "opening",
+    "id": "binary_sensor-opening",
+    "name": "opening",
+    "deviceClass": "opening"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "smoke",
+    "id": "binary_sensor-smoke",
+    "name": "smoke",
+    "deviceClass": "smoke"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "gas",
+    "id": "binary_sensor-gas",
+    "name": "gas",
+    "deviceClass": "gas"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "carbon_monoxide",
+    "id": "binary_sensor-carbon_monoxide",
+    "name": "carbon monoxide",
+    "deviceClass": "carbon_monoxide"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "moisture",
+    "id": "binary_sensor-moisture",
+    "name": "moisture",
+    "deviceClass": "moisture"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "vibration",
+    "id": "binary_sensor-vibration",
+    "name": "vibration",
+    "deviceClass": "vibration"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "tamper",
+    "id": "binary_sensor-tamper",
+    "name": "tamper",
+    "deviceClass": "tamper"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "battery",
+    "id": "binary_sensor-battery",
+    "name": "battery",
+    "deviceClass": "battery"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "lock",
+    "id": "binary_sensor-lock",
+    "name": "lock",
+    "deviceClass": "lock"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "light",
+    "id": "binary_sensor-light",
+    "name": "light",
+    "deviceClass": "light"
+  },
+  {
+    "type": "binary_sensor",
+    "objectId": "plain_input",
+    "id": "binary_sensor-plain_input",
+    "name": "plain input"
+  },
+  {
+    "type": "text_sensor",
+    "objectId": "wifi_ssid",
+    "id": "text_sensor-wifi_ssid",
+    "name": "wifi ssid"
+  },
+  {
+    "type": "text",
+    "objectId": "display_message",
+    "id": "text-display_message",
+    "name": "display message"
+  },
+  {
+    "type": "switch",
+    "objectId": "relay",
+    "id": "switch-relay",
+    "name": "relay"
+  },
+  {
+    "type": "button",
+    "objectId": "restart",
+    "id": "button-restart",
+    "name": "restart"
+  },
+  {
+    "type": "light",
+    "objectId": "onoff_light",
+    "id": "light-onoff_light",
+    "name": "onoff light",
+    "supportedColorModes": [1]
+  },
+  {
+    "type": "light",
+    "objectId": "rgbct_light",
+    "id": "light-rgbct_light",
+    "name": "rgbct light",
+    "supportedColorModes": [47],
+    "minMireds": 153.2,
+    "maxMireds": 500.4
+  },
+  {
+    "type": "cover",
+    "objectId": "garage",
+    "id": "cover-garage",
+    "name": "garage"
+  },
+  {
+    "type": "cover",
+    "objectId": "shutter",
+    "id": "cover-shutter",
+    "name": "shutter",
+    "supportsPosition": true
+  },
+  {
+    "type": "cover",
+    "objectId": "curtain",
+    "id": "cover-curtain",
+    "name": "curtain",
+    "deviceClass": "curtain",
+    "supportsPosition": true
+  },
+  {
+    "type": "lock",
+    "objectId": "front_door",
+    "id": "lock-front_door",
+    "name": "front door"
+  },
+  {
+    "type": "fan",
+    "objectId": "plain_fan",
+    "id": "fan-plain_fan",
+    "name": "plain fan"
+  },
+  {
+    "type": "fan",
+    "objectId": "speed_fan",
+    "id": "fan-speed_fan",
+    "name": "speed fan",
+    "supportsSpeed": true,
+    "supportedSpeedCount": 3
+  },
+  {
+    "type": "climate",
+    "objectId": "thermostat",
+    "id": "climate-thermostat",
+    "name": "thermostat",
+    "supportsCurrentTemperature": true,
+    "visualMinTemperature": 7,
+    "visualMaxTemperature": 30
+  },
+  {
+    "type": "climate",
+    "objectId": "heat_cool",
+    "id": "climate-heat_cool",
+    "name": "heat cool",
+    "supportsCurrentTemperature": true,
+    "supportsTwoPointTargetTemperature": true
+  },
+  {
+    "type": "number",
+    "objectId": "delay",
+    "id": "number-delay",
+    "name": "delay",
+    "minValue": 5,
+    "maxValue": 42,
+    "unitOfMeasurement": "s"
+  },
+  {
+    "type": "number",
+    "objectId": "plain_number",
+    "id": "number-plain_number",
+    "name": "plain number"
+  },
+  {
+    "type": "siren",
+    "objectId": "alarm",
+    "id": "siren-alarm",
+    "name": "alarm"
+  },
+  {
+    "type": "valve",
+    "objectId": "water",
+    "id": "valve-water",
+    "name": "water"
+  },
+  {
+    "type": "select",
+    "objectId": "mode",
+    "id": "select-mode",
+    "name": "mode"
+  },
+  {
+    "type": "event",
+    "objectId": "doorbell",
+    "id": "event-doorbell",
+    "name": "doorbell",
+    "eventTypes": ["single", "double"]
+  },
+  {
+    "type": "media_player",
+    "objectId": "speaker",
+    "id": "media_player-speaker",
+    "name": "speaker"
+  }
+]
