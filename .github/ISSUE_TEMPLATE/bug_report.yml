@@ -1,0 +1,56 @@
+name: Bug report
+description: Something does not work as described in the documentation.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem. Never paste your encryption key: the logs of the integration do not contain it, but check before posting.
+  - type: input
+    id: gladys-version
+    attributes:
+      label: Gladys version
+      description: Settings → System.
+      placeholder: '5.1.4'
+    validations:
+      required: true
+  - type: input
+    id: integration-version
+    attributes:
+      label: Integration version
+      description: The Supervision tab of the integration in Gladys.
+      placeholder: '1.2.0'
+    validations:
+      required: true
+  - type: input
+    id: esphome-version
+    attributes:
+      label: ESPHome version and board
+      description: The firmware version of the node (shown in the ESPHome logs or the device params in Gladys) and the board.
+      placeholder: 'ESPHome 2026.9.0, ESP32-C3'
+    validations:
+      required: true
+  - type: textarea
+    id: yaml
+    attributes:
+      label: The YAML of the entity
+      description: 'The part of your ESPHome YAML that declares the entity concerned (remove the `api: encryption: key:` and the Wi-Fi password).'
+      render: yaml
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened, and what you expected
+      description: A feature missing from the discovery, a state that does not change, a command with no effect, a node that does not reconnect…
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Logs of the integration (its Supervision tab in Gladys), ideally with the SDK debug logs: add the environment variable `DEBUG=gladys-integration-sdk` to the container, reproduce, then copy the lines. The ESPHome logs of the node help too.
+      render: text
