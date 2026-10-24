@@ -424,16 +424,23 @@ test('pull request titles must read as a changelog line', () => {
 
 test('the CHANGELOG.md of this repository takes the next section and stays formatted', async () => {
   const text = await readFile(changelogPath, 'utf8');
+  // The next minor after the last released section: a fixed version would be
+  // taken by the release that publishes it.
+  const previous = text.match(/^## \[(\d+\.\d+\.\d+)\]/m)[1];
+  const [major, minor] = previous.split('.').map(Number);
+  const version = `${major}.${minor + 1}.0`;
   const release = {
-    version: '1.2.0',
-    previous: '1.1.0',
+    version,
+    previous,
     date: '2026-10-14',
     commits: [commit('feat(scenes): start a scene when an ESPHome node fires an event')],
     repoUrl: REPO,
   };
   const next = updateChangelog(text, release);
-  assert.ok(next.includes(text.slice(text.indexOf('## [1.1.0]')).trim()), 'history kept');
-  assert.ok(next.indexOf('## [1.2.0] - 2026-10-14') < next.indexOf('## [1.1.0]'));
+  // The released sections, without the link definitions the new one joins.
+  const history = text.slice(text.indexOf(`## [${previous}]`)).split(/\n\[\d+\.\d+\.\d+\]: /)[0];
+  assert.ok(next.includes(history.trim()), 'history kept');
+  assert.ok(next.indexOf(`## [${version}] - 2026-10-14`) < next.indexOf(`## [${previous}]`));
   assert.equal(updateChangelog(next, release), next, 'idempotent');
   await assertPrettierClean(next, changelogPath);
 });
