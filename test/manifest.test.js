@@ -147,3 +147,21 @@ test('the repository ships the license package.json declares', () => {
   const license = readFileSync(new URL('../LICENSE', import.meta.url), 'utf-8');
   assert.match(license, /Apache License\s+Version 2\.0/);
 });
+
+test('catalog fields of Gladys 5.3: search keywords and countries', () => {
+  // keywords and countries are accepted from Gladys 5.3.0 on.
+  assert.equal(manifest.gladys_version, '>=5.3.0');
+  assert.ok(Array.isArray(manifest.keywords), 'keywords is a list');
+  assert.ok(manifest.keywords.length >= 1 && manifest.keywords.length <= 10, '1 to 10 keywords');
+  for (const keyword of manifest.keywords) {
+    assert.ok(
+      keyword.trim().length >= 2 && keyword.trim().length <= 30,
+      `"${keyword}": 2 to 30 chars`,
+    );
+  }
+  const normalized = manifest.keywords.map((keyword) => keyword.trim().toLowerCase());
+  assert.equal(new Set(normalized).size, normalized.length, 'keywords are unique');
+  assert.ok(!normalized.includes(manifest.name.toLowerCase()), 'the name is already searched');
+  // Usable anywhere: no country restriction.
+  assert.equal(manifest.countries, undefined);
+});

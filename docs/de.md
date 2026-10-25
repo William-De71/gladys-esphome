@@ -34,7 +34,7 @@ ESPHome **sendet** seine Zustandsänderungen von selbst: Die Integration hält z
 
 ## Voraussetzungen
 
-- Gladys **5.1.0** oder neuer.
+- Gladys **5.3.0** oder neuer.
 - Ein oder mehrere Geräte mit **ESPHome 2025.10 oder neuer**.
 - Die native API in Ihrer YAML aktiviert (das ist standardmäßig der Fall):
 

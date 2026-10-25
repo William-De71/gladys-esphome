@@ -5,7 +5,7 @@
 [![Lizenz: Apache-2.0](https://img.shields.io/badge/Lizenz-Apache--2.0-blue.svg)](LICENSE)
 [![Neueste Version](https://img.shields.io/github/v/release/William-De71/gladys-esphome?sort=semver)](https://github.com/William-De71/gladys-esphome/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/William-De71/gladys-esphome/release.yml?branch=main&label=CI)](https://github.com/William-De71/gladys-esphome/actions/workflows/release.yml)
-[![Gladys](https://img.shields.io/badge/Gladys-%E2%89%A5%205.1.0-2f6fb5)](https://gladysassistant.com)
+[![Gladys](https://img.shields.io/badge/Gladys-%E2%89%A5%205.3.0-2f6fb5)](https://gladysassistant.com)
 
 ![ESPHome für Gladys Assistant](cover.jpg)
 
@@ -158,7 +158,7 @@ In einer Szene: Auslöser **ESPHome-Ereignis** mit Knoten `salon`, Entität `But
 
 ## Installation
 
-1. In Gladys (5.1.0 oder neuer): **Integrationen → Store**, nach **ESPHome** suchen, installieren.
+1. In Gladys (5.3.0 oder neuer): **Integrationen → Store**, nach **ESPHome** suchen, installieren.
 2. Fügen Sie Ihren Verschlüsselungsschlüssel in die Konfiguration ein und speichern Sie.
 3. **Entdecken → Suchen**, dann die gewünschten Knoten hinzufügen.
 

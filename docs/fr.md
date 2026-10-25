@@ -34,7 +34,7 @@ ESPHome **pousse** ses changements d'état : l'intégration garde une connexion 
 
 ## Prérequis
 
-- Gladys **5.1.0** ou plus récent.
+- Gladys **5.3.0** ou plus récent.
 - Un ou plusieurs appareils sous **ESPHome 2025.10 ou plus récent**.
 - L'API native activée dans votre YAML (c'est le cas par défaut) :
 

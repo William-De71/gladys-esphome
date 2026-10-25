@@ -34,7 +34,7 @@ ESPHome **pushes** its state changes: the integration keeps a connection open to
 
 ## Requirements
 
-- Gladys **5.1.0** or newer.
+- Gladys **5.3.0** or newer.
 - One or more devices running **ESPHome 2025.10 or newer**.
 - The native API enabled in your YAML (it is by default):
 
