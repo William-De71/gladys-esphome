@@ -93,10 +93,10 @@
         "es": "Nodos con una clave distinta"
       },
       "description": {
-        "en": "Fill the two fields below only if some nodes do not share the key above, or if a node is not found by the network scan (another VLAN, mDNS filtered by your router).",
-        "fr": "Ne remplissez les deux champs ci-dessous que si certains nœuds ne partagent pas la clé ci-dessus, ou si un nœud n'est pas trouvé par le scan réseau (autre VLAN, mDNS filtré par votre routeur).",
-        "de": "Füllen Sie die beiden Felder unten nur aus, wenn einige Knoten den obigen Schlüssel nicht teilen oder ein Knoten von der Netzwerksuche nicht gefunden wird (anderes VLAN, mDNS vom Router gefiltert).",
-        "es": "Rellene los dos campos siguientes solo si algunos nodos no comparten la clave anterior, o si la búsqueda en la red no encuentra un nodo (otra VLAN, mDNS filtrado por su router)."
+        "en": "Only needed if some nodes do not share the key above, or if a node is not found by the network scan (another VLAN, mDNS filtered by your router). With several nodes, prefer the \"Set a node key\" button at the bottom of this page: it adds or replaces one key without touching the others.",
+        "fr": "Utile seulement si certains nœuds ne partagent pas la clé ci-dessus, ou si un nœud n'est pas trouvé par le scan réseau (autre VLAN, mDNS filtré par votre routeur). Avec plusieurs nœuds, préférez le bouton « Définir la clé d'un nœud » en bas de cette page : il ajoute ou remplace une clé sans toucher aux autres.",
+        "de": "Nur nötig, wenn einige Knoten den obigen Schlüssel nicht teilen oder ein Knoten von der Netzwerksuche nicht gefunden wird (anderes VLAN, mDNS vom Router gefiltert). Bei mehreren Knoten nutzen Sie besser die Schaltfläche „Schlüssel eines Knotens festlegen“ unten auf dieser Seite: Sie fügt einen Schlüssel hinzu oder ersetzt ihn, ohne die anderen zu ändern.",
+        "es": "Solo es necesario si algunos nodos no comparten la clave anterior, o si la búsqueda en la red no encuentra un nodo (otra VLAN, mDNS filtrado por su router). Con varios nodos, mejor use el botón «Definir la clave de un nodo» al final de esta página: añade o sustituye una clave sin tocar las demás."
       }
     },
     {
@@ -109,16 +109,16 @@
         "es": "Claves por nodo"
       },
       "description": {
-        "en": "One node per line, in the form `node|key`. The node name is the one from your ESPHome YAML (`esphome: name:`), or its address. These keys take precedence over the key above.",
-        "fr": "Un nœud par ligne, sous la forme `nœud|clé`. Le nom du nœud est celui de votre YAML ESPHome (`esphome: name:`), ou son adresse. Ces clés sont prioritaires sur la clé ci-dessus.",
-        "de": "Ein Knoten pro Zeile, im Format `knoten|schlüssel`. Der Knotenname ist der aus Ihrer ESPHome-YAML (`esphome: name:`) oder seine Adresse. Diese Schlüssel haben Vorrang vor dem obigen Schlüssel.",
-        "es": "Un nodo por línea, con el formato `nodo|clave`. El nombre del nodo es el de su YAML de ESPHome (`esphome: name:`), o su dirección. Estas claves tienen prioridad sobre la clave anterior."
+        "en": "`node|key` pairs separated by a space, a comma or a semicolon (this field is a single line). The node name is the one from your ESPHome YAML (`esphome: name:`), or its address. These keys take precedence over the key above. Saving this field again replaces every key it held: the node key buttons below edit one node at a time, and take over the keys typed here.",
+        "fr": "Des paires `nœud|clé` séparées par un espace, une virgule ou un point-virgule (ce champ tient sur une seule ligne). Le nom du nœud est celui de votre YAML ESPHome (`esphome: name:`), ou son adresse. Ces clés sont prioritaires sur la clé ci-dessus. Enregistrer à nouveau ce champ remplace toutes les clés qu'il contenait : les boutons de clés par nœud ci-dessous modifient un nœud à la fois, et reprennent les clés saisies ici.",
+        "de": "`knoten|schlüssel`-Paare, getrennt durch ein Leerzeichen, ein Komma oder ein Semikolon (dieses Feld ist einzeilig). Der Knotenname ist der aus Ihrer ESPHome-YAML (`esphome: name:`) oder seine Adresse. Diese Schlüssel haben Vorrang vor dem obigen Schlüssel. Erneutes Speichern dieses Felds ersetzt alle darin enthaltenen Schlüssel: Die Knotenschlüssel-Schaltflächen unten ändern jeweils einen Knoten und übernehmen die hier eingegebenen Schlüssel.",
+        "es": "Pares `nodo|clave` separados por un espacio, una coma o un punto y coma (este campo es de una sola línea). El nombre del nodo es el de su YAML de ESPHome (`esphome: name:`), o su dirección. Estas claves tienen prioridad sobre la clave anterior. Guardar de nuevo este campo sustituye todas las claves que contenía: los botones de claves por nodo de más abajo modifican un nodo cada vez y recuperan las claves escritas aquí."
       },
       "placeholder": {
-        "en": "salon|kBv1s2f...=\nkitchen|9xQm4Zt...=",
-        "fr": "salon|kBv1s2f...=\ncuisine|9xQm4Zt...=",
-        "de": "wohnzimmer|kBv1s2f...=\nkueche|9xQm4Zt...=",
-        "es": "salon|kBv1s2f...=\ncocina|9xQm4Zt...="
+        "en": "salon|kBv1s2f...= kitchen|9xQm4Zt...=",
+        "fr": "salon|kBv1s2f...= cuisine|9xQm4Zt...=",
+        "de": "wohnzimmer|kBv1s2f...= kueche|9xQm4Zt...=",
+        "es": "salon|kBv1s2f...= cocina|9xQm4Zt...="
       },
       "required": false
     },
@@ -132,16 +132,16 @@
         "es": "Nodos añadidos a mano"
       },
       "description": {
-        "en": "One address per line (`salon.local`, `192.168.1.42`, or `192.168.1.42:6053`), for the nodes the network scan does not find. Nodes found by the scan need nothing here.",
-        "fr": "Une adresse par ligne (`salon.local`, `192.168.1.42`, ou `192.168.1.42:6053`), pour les nœuds que le scan réseau ne trouve pas. Les nœuds trouvés par le scan n'ont rien à faire ici.",
-        "de": "Eine Adresse pro Zeile (`wohnzimmer.local`, `192.168.1.42` oder `192.168.1.42:6053`) für die Knoten, die die Netzwerksuche nicht findet. Von der Suche gefundene Knoten brauchen hier nichts.",
-        "es": "Una dirección por línea (`salon.local`, `192.168.1.42` o `192.168.1.42:6053`), para los nodos que la búsqueda en la red no encuentra. Los nodos encontrados por la búsqueda no necesitan nada aquí."
+        "en": "Addresses separated by a space, a comma or a semicolon (`salon.local`, `192.168.1.42`, or `192.168.1.42:6053`), for the nodes the network scan does not find. Nodes found by the scan need nothing here.",
+        "fr": "Des adresses séparées par un espace, une virgule ou un point-virgule (`salon.local`, `192.168.1.42`, ou `192.168.1.42:6053`), pour les nœuds que le scan réseau ne trouve pas. Les nœuds trouvés par le scan n'ont rien à faire ici.",
+        "de": "Adressen, getrennt durch ein Leerzeichen, ein Komma oder ein Semikolon (`wohnzimmer.local`, `192.168.1.42` oder `192.168.1.42:6053`), für die Knoten, die die Netzwerksuche nicht findet. Von der Suche gefundene Knoten brauchen hier nichts.",
+        "es": "Direcciones separadas por un espacio, una coma o un punto y coma (`salon.local`, `192.168.1.42` o `192.168.1.42:6053`), para los nodos que la búsqueda en la red no encuentra. Los nodos encontrados por la búsqueda no necesitan nada aquí."
       },
       "placeholder": {
-        "en": "salon.local\n192.168.1.42:6053",
-        "fr": "salon.local\n192.168.1.42:6053",
-        "de": "wohnzimmer.local\n192.168.1.42:6053",
-        "es": "salon.local\n192.168.1.42:6053"
+        "en": "salon.local 192.168.1.42:6053",
+        "fr": "salon.local 192.168.1.42:6053",
+        "de": "wohnzimmer.local 192.168.1.42:6053",
+        "es": "salon.local 192.168.1.42:6053"
       },
       "required": false
     },
@@ -206,6 +206,127 @@
         "es": "Reconectar los nodos"
       },
       "timeout_seconds": 60
+    },
+    {
+      "key": "set_node_key",
+      "label": {
+        "en": "Set a node key",
+        "fr": "Définir la clé d'un nœud",
+        "de": "Schlüssel eines Knotens festlegen",
+        "es": "Definir la clave de un nodo"
+      },
+      "description": {
+        "en": "Adds or replaces the encryption key of one node, then reconnects it. The keys of the other nodes are kept.",
+        "fr": "Ajoute ou remplace la clé de chiffrement d'un nœud, puis le reconnecte. Les clés des autres nœuds sont conservées.",
+        "de": "Fügt den Verschlüsselungsschlüssel eines Knotens hinzu oder ersetzt ihn und verbindet ihn dann neu. Die Schlüssel der anderen Knoten bleiben erhalten.",
+        "es": "Añade o sustituye la clave de cifrado de un nodo y luego lo reconecta. Las claves de los demás nodos se conservan."
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "node",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Node",
+            "fr": "Nœud",
+            "de": "Knoten",
+            "es": "Nodo"
+          },
+          "description": {
+            "en": "The name from `esphome: name:`, or the address typed under \"Nodes added by hand\" for such a node.",
+            "fr": "Le nom de `esphome: name:`, ou l'adresse saisie dans « Nœuds ajoutés à la main » pour un tel nœud.",
+            "de": "Der Name aus `esphome: name:` oder, bei einem solchen Knoten, die unter „Manuell hinzugefügte Knoten“ eingegebene Adresse.",
+            "es": "El nombre de `esphome: name:`, o la dirección escrita en «Nodos añadidos a mano» para un nodo así."
+          },
+          "placeholder": {
+            "en": "salon",
+            "fr": "salon",
+            "de": "wohnzimmer",
+            "es": "salon"
+          }
+        },
+        {
+          "key": "key",
+          "type": "secret",
+          "required": true,
+          "label": {
+            "en": "Encryption key",
+            "fr": "Clé de chiffrement",
+            "de": "Verschlüsselungsschlüssel",
+            "es": "Clave de cifrado"
+          },
+          "description": {
+            "en": "The `api: encryption: key:` of this node's YAML.",
+            "fr": "La `api: encryption: key:` du YAML de ce nœud.",
+            "de": "Der `api: encryption: key:` aus der YAML dieses Knotens.",
+            "es": "La `api: encryption: key:` del YAML de este nodo."
+          },
+          "placeholder": {
+            "en": "kBv1s2f...=",
+            "fr": "kBv1s2f...=",
+            "de": "kBv1s2f...=",
+            "es": "kBv1s2f...="
+          }
+        }
+      ]
+    },
+    {
+      "key": "remove_node_key",
+      "label": {
+        "en": "Remove a node key",
+        "fr": "Supprimer la clé d'un nœud",
+        "de": "Schlüssel eines Knotens entfernen",
+        "es": "Eliminar la clave de un nodo"
+      },
+      "description": {
+        "en": "The node then uses the default key again.",
+        "fr": "Le nœud utilise ensuite à nouveau la clé par défaut.",
+        "de": "Der Knoten verwendet danach wieder den Standardschlüssel.",
+        "es": "El nodo vuelve a usar después la clave por defecto."
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "node",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Node",
+            "fr": "Nœud",
+            "de": "Knoten",
+            "es": "Nodo"
+          },
+          "description": {
+            "en": "The name from `esphome: name:`, or the address typed under \"Nodes added by hand\" for such a node.",
+            "fr": "Le nom de `esphome: name:`, ou l'adresse saisie dans « Nœuds ajoutés à la main » pour un tel nœud.",
+            "de": "Der Name aus `esphome: name:` oder, bei einem solchen Knoten, die unter „Manuell hinzugefügte Knoten“ eingegebene Adresse.",
+            "es": "El nombre de `esphome: name:`, o la dirección escrita en «Nodos añadidos a mano» para un nodo así."
+          },
+          "placeholder": {
+            "en": "salon",
+            "fr": "salon",
+            "de": "wohnzimmer",
+            "es": "salon"
+          }
+        }
+      ]
+    },
+    {
+      "key": "list_node_keys",
+      "label": {
+        "en": "List the node keys",
+        "fr": "Lister les clés par nœud",
+        "de": "Knotenschlüssel auflisten",
+        "es": "Listar las claves por nodo"
+      },
+      "description": {
+        "en": "The nodes with a specific key, the key masked, and whether each one is connected.",
+        "fr": "Les nœuds ayant une clé spécifique, la clé masquée, et si chacun est connecté.",
+        "de": "Die Knoten mit eigenem Schlüssel, der Schlüssel maskiert, und ob jeder verbunden ist.",
+        "es": "Los nodos con una clave específica, la clave oculta, y si cada uno está conectado."
+      },
+      "timeout_seconds": 15
     }
   ],
   "scene_triggers": [

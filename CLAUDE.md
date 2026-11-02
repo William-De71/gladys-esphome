@@ -38,6 +38,7 @@ src/app.js                    every handler, registered before connect(); the te
 src/events.js                 scene triggers event_fired, node_offline, node_online
 src/devices.js                discovery, state batching (publishChangedStates), commands
 src/config.js                 config normalization, per-node keys, manual nodes
+src/nodeKeys.js               per-node keys set by the action buttons (setConfig node_keys)
 src/messages.js               runtime messages, en / fr / de / es
 src/esphome/EsphomeManager.js one session per node, entity index, last states, actions
 src/esphome/mapping.js        ESPHome entity -> Gladys feature descriptors
@@ -77,8 +78,13 @@ src/esphome/actions.js        user-defined actions (`api: actions:`): typed argu
 - **Language**: Gladys does not send it with a command or a scene action.
   Error messages are in English (they also go to the logs); every text Gladys
   shows comes from the manifest or `src/messages.js`, in four languages.
-- **The container rootfs is read-only** and the integration stores nothing:
-  the node addresses live in the device params.
+- **The container rootfs is read-only** and the integration stores nothing
+  on disk: the node addresses live in the device params, the per-node keys of
+  the action buttons in the config (`node_keys`, outside the config_schema,
+  through setConfig).
+- **Config fields are single-line inputs** in Gladys (a paste loses its line
+  breaks): a free-text field splits on any whitespace, comma or semicolon,
+  never on line breaks only.
 - **User-facing text** exists in en, fr, de and es: manifest,
   `src/messages.js`, `docs/*.md`, `README*.md`. `test/i18n.test.js` checks it.
   Images in `docs/*.md` use `raw.githubusercontent.com` URLs (the store

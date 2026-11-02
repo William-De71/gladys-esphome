@@ -97,15 +97,15 @@ Cada par categoría/tipo que puede generar la correspondencia está fijado por u
 
 ## Configuración
 
-| Campo                            | Por defecto | Uso                                                                                     |
-| -------------------------------- | ----------- | --------------------------------------------------------------------------------------- |
-| Clave de cifrado                 | vacío       | La `api: encryption: key:` que comparten sus nodos; vacía para los nodos sin cifrado    |
-| Claves por nodo                  | vacío       | `nodo\|clave`, una por línea, para los nodos que tienen su propia clave                 |
-| Nodos añadidos a mano            | vacío       | `salon.local`, `192.168.1.42` o `192.168.1.42:6053`, para un nodo que la búsqueda no ve |
-| Duración de la búsqueda (s)      | 8           | Tiempo durante el cual escucha la búsqueda mDNS (de 3 a 30)                             |
-| Tiempo de espera de conexión (s) | 10          | Tiempo de espera de un nodo antes de abandonarlo (de 5 a 60)                            |
+| Campo                            | Por defecto | Uso                                                                                                             |
+| -------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| Clave de cifrado                 | vacío       | La `api: encryption: key:` que comparten sus nodos; vacía para los nodos sin cifrado                            |
+| Claves por nodo                  | vacío       | pares `nodo\|clave` separados por espacios (campo de una línea); mejor el botón **Definir la clave de un nodo** |
+| Nodos añadidos a mano            | vacío       | `salon.local`, `192.168.1.42` o `192.168.1.42:6053`, para un nodo que la búsqueda no ve                         |
+| Duración de la búsqueda (s)      | 8           | Tiempo durante el cual escucha la búsqueda mDNS (de 3 a 30)                                                     |
+| Tiempo de espera de conexión (s) | 10          | Tiempo de espera de un nodo antes de abandonarlo (de 5 a 60)                                                    |
 
-Acciones de la página de la integración: **Probar la conexión** (un descubrimiento completo, con el número de nodos y de funcionalidades) y **Reconectar los nodos** (cierra y vuelve a abrir todas las sesiones, tras reprogramar un nodo o cambiar una clave).
+Acciones de la página de la integración: **Probar la conexión** (un descubrimiento completo, con el número de nodos y de funcionalidades), **Reconectar los nodos** (cierra y vuelve a abrir todas las sesiones, tras reprogramar un nodo o cambiar una clave), y **Definir la clave de un nodo** / **Eliminar la clave de un nodo** / **Listar las claves por nodo** (un nodo cada vez, las demás claves se conservan).
 
 ## Transporte
 
@@ -240,7 +240,7 @@ Los títulos de los commits y de las pull requests siguen [Conventional Commits]
 | Síntoma                                            | Causa probable                                                                                                                  |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | No se encuentra ningún nodo                        | mDNS bloqueado (VLAN, aislamiento de clientes): añada el nodo a mano                                                            |
-| Nodo visible en la red pero ausente de la lista    | La clave de cifrado no coincide: compruebe `api: encryption: key:`, o utilice **Claves por nodo**                               |
+| Nodo visible en la red pero ausente de la lista    | La clave de cifrado no coincide: compruebe `api: encryption: key:`, o utilice **Definir la clave de un nodo**                   |
 | Dispositivo «Inaccesible»                          | Nodo apagado, fuera del alcance del Wi-Fi, o sus cuatro ranuras API ocupadas (Home Assistant, una consola de registros abierta) |
 | Un sensor en «Desconocido»                         | Sin `device_class` en el YAML: añada uno y vuelva a buscar                                                                      |
 | La acción de escena falla con «declares no action» | Nombre de acción distinto del `action:` del YAML; el error enumera las acciones que declara el nodo                             |

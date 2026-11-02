@@ -1,7 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { MESSAGES, testOk, testFailed, reconnectOk, reconnectFailed } from '../src/messages.js';
+import {
+  MESSAGES,
+  testOk,
+  testFailed,
+  reconnectOk,
+  reconnectFailed,
+  nodeKeySet,
+  nodeKeyRemoved,
+  nodeKeyRefused,
+  nodeKeySaveFailed,
+  nodeKeysList,
+} from '../src/messages.js';
 
 const LANGUAGES = ['en', 'fr', 'de', 'es'];
 
@@ -25,6 +36,18 @@ test('every user-facing message exists in the four languages of Gladys', () => {
   assertTranslated('testFailed', testFailed('timeout'));
   assertTranslated('reconnectOk', reconnectOk(3));
   assertTranslated('reconnectFailed', reconnectFailed('timeout'));
+  for (const connected of [true, false]) {
+    assertTranslated('nodeKeySet', nodeKeySet('salon', connected));
+    assertTranslated('nodeKeyRemoved', nodeKeyRemoved('salon', connected));
+    assertTranslated('nodeKeysList', nodeKeysList([], connected));
+  }
+  assertTranslated('nodeKeyRefused', nodeKeyRefused('invalid_key'));
+  assertTranslated('nodeKeyRefused', nodeKeyRefused('invalid_node'));
+  assertTranslated('nodeKeySaveFailed', nodeKeySaveFailed('timeout'));
+  assertTranslated(
+    'nodeKeysList',
+    nodeKeysList([{ node: 'salon', key: 'kBv1…=', connected: true }], true),
+  );
 });
 
 test('the values carried by a message reach every language untranslated', () => {

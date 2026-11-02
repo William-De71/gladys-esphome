@@ -58,14 +58,18 @@ If **all** your nodes share the same key (the common case when using a shared `!
 
 ### 2. Nodes with a different key
 
-If some nodes have their own key, fill in **Keys per node**, one node per line:
+If some nodes have their own key, use the **Set a node key** button at the bottom of the integration's configuration page: type the node name (the one from `esphome: name:`) and its key, then confirm. The node is reconnected with that key right away, and the message tells whether it answered. Repeat for each node: the keys already saved are kept.
 
-```
-living_room|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0=
-kitchen|9xQm4Zt6R8s0T2u4V6w8X0y2Z4a6B8c0D2e4F6g8H0=
-```
+- **List the node keys** shows the nodes with a specific key, the key masked (`kBv1…=`), and whether each one is connected.
+- **Remove a node key** puts it back on the default key.
 
-The node name is the one declared in `esphome: name:`. These keys take precedence over the default key.
+These keys take precedence over the default key.
+
+> The **Keys per node** field of the configuration is still there, but it is **a single line**: separate the `node|key` pairs with a space, a comma or a semicolon. Being a secret field, it looks empty once saved, and saving it again replaces every key it held. As soon as you use one of the buttons above, the keys typed in that field are taken over by the buttons and the field is emptied.
+>
+> ```
+> living_room|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0= kitchen|9xQm4Zt6R8s0T2u4V6w8X0y2Z4a6B8c0D2e4F6g8H0=
+> ```
 
 ### 3. Discover your devices
 
@@ -75,7 +79,7 @@ Discovery uses mDNS (the protocol ESPHome announces itself with). Gladys perform
 
 ### 4. If a node is not found
 
-Some networks block mDNS (separate VLANs, Wi-Fi with client isolation, a router filtering multicast). In that case, declare the node by hand under **Nodes added by hand**, one address per line:
+Some networks block mDNS (separate VLANs, Wi-Fi with client isolation, a router filtering multicast). In that case, declare the node by hand under **Nodes added by hand**, addresses separated by a space, a comma or a semicolon:
 
 ```
 living-room.local
@@ -87,10 +91,10 @@ living-room.local
 
 The port is optional (6053 by default). Once connected, the node reports its real name itself: a node added by IP address still shows up under its ESPHome name, and it keeps working even if its IP address changes later.
 
-> **If that node has an encryption key of its own**, declare it under **Keys per node** using **the same address** you typed here, not its ESPHome name:
+> **If that node has an encryption key of its own**, set it with the **Set a node key** button, typing as the node **the same address** you typed here, not its ESPHome name:
 >
 > ```
-> 192.168.1.42|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0=
+> Node: 192.168.1.42
 > ```
 >
 > The reason is simple: its name is only known once the connection succeeds, and the connection needs the key in the first place. This does not apply to nodes found by the scan, nor to nodes using the default key.
@@ -99,6 +103,7 @@ The port is optional (6053 by default). Once connected, the node reports its rea
 
 - **Test the connection**: runs a full discovery and tells you how many nodes answered and how many features are available.
 - **Reconnect the nodes**: closes every connection and reopens them. Useful after reflashing a node or changing a key.
+- **Set a node key**, **Remove a node key**, **List the node keys**: the keys specific to some nodes, one node at a time (see above).
 
 ## Scenes
 
@@ -189,7 +194,7 @@ Recognized `device_class` values include: `temperature`, `humidity`, `pressure`,
 Check that your nodes are powered on and connected to Wi-Fi. If your network blocks mDNS, add them by hand (see above).
 
 **A node is found but does not show up in the list**
-This is almost always a mismatched encryption key. The node is visible on the network but refuses the connection. Check the key in its YAML, and use **Keys per node** if it differs from the default key.
+This is almost always a mismatched encryption key. The node is visible on the network but refuses the connection. Check the key in its YAML, and use **Set a node key** if it differs from the default key. **List the node keys** shows which nodes have a specific key and whether they are connected.
 
 **A node disappears then comes back**
 That is expected after a node reboot (OTA update, power cut). The integration reconnects on its own, with a growing delay so it never floods the network.

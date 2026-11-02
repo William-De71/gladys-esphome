@@ -52,6 +52,12 @@ test('every runtime message exists in the four languages', () => {
     messages.testFailed('timeout'),
     messages.reconnectOk(3),
     messages.reconnectFailed('timeout'),
+    messages.nodeKeySet('salon', true),
+    messages.nodeKeySet('salon', false),
+    messages.nodeKeyRemoved('salon', true),
+    messages.nodeKeyRefused('invalid_key'),
+    messages.nodeKeySaveFailed('timeout'),
+    messages.nodeKeysList([{ node: 'salon', key: 'kBv1…=', connected: true }], true),
   ];
   for (const message of built) {
     assert.deepEqual(Object.keys(message).sort(), [...LANGUAGES].sort());

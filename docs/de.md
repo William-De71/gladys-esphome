@@ -58,14 +58,18 @@ Wenn **alle** Ihre Knoten denselben Schlüssel verwenden (der Normalfall bei ein
 
 ### 2. Knoten mit einem anderen Schlüssel
 
-Haben einige Knoten einen eigenen Schlüssel, füllen Sie **Schlüssel pro Knoten** aus, ein Knoten pro Zeile:
+Haben einige Knoten einen eigenen Schlüssel, nutzen Sie die Schaltfläche **Schlüssel eines Knotens festlegen** unten auf der Konfigurationsseite der Integration: Geben Sie den Knotennamen (den aus `esphome: name:`) und seinen Schlüssel ein und bestätigen Sie. Der Knoten wird sofort mit diesem Schlüssel neu verbunden, und die Meldung zeigt, ob er geantwortet hat. Wiederholen Sie das für jeden Knoten: Bereits gespeicherte Schlüssel bleiben erhalten.
 
-```
-wohnzimmer|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0=
-kueche|9xQm4Zt6R8s0T2u4V6w8X0y2Z4a6B8c0D2e4F6g8H0=
-```
+- **Knotenschlüssel auflisten** zeigt die Knoten mit eigenem Schlüssel, den Schlüssel maskiert (`kBv1…=`), und ob jeder verbunden ist.
+- **Schlüssel eines Knotens entfernen** setzt ihn auf den Standardschlüssel zurück.
 
-Der Knotenname ist der unter `esphome: name:` angegebene. Diese Schlüssel haben Vorrang vor dem Standardschlüssel.
+Diese Schlüssel haben Vorrang vor dem Standardschlüssel.
+
+> Das Feld **Schlüssel pro Knoten** der Konfiguration gibt es weiterhin, aber es ist **einzeilig**: Trennen Sie die `knoten|schlüssel`-Paare durch ein Leerzeichen, ein Komma oder ein Semikolon. Als geheimes Feld wirkt es nach dem Speichern leer, und erneutes Speichern ersetzt alle darin enthaltenen Schlüssel. Sobald Sie eine der obigen Schaltflächen verwenden, werden die in diesem Feld eingegebenen Schlüssel übernommen und das Feld geleert.
+>
+> ```
+> wohnzimmer|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0= kueche|9xQm4Zt6R8s0T2u4V6w8X0y2Z4a6B8c0D2e4F6g8H0=
+> ```
 
 ### 3. Geräte entdecken
 
@@ -75,7 +79,7 @@ Die Suche nutzt mDNS (das Protokoll, mit dem sich ESPHome im Netzwerk ankündigt
 
 ### 4. Wenn ein Knoten nicht gefunden wird
 
-Manche Netzwerke blockieren mDNS (getrennte VLANs, WLAN mit Client-Isolation, ein Router, der Multicast filtert). Tragen Sie den Knoten dann unter **Manuell hinzugefügte Knoten** ein, eine Adresse pro Zeile:
+Manche Netzwerke blockieren mDNS (getrennte VLANs, WLAN mit Client-Isolation, ein Router, der Multicast filtert). Tragen Sie den Knoten dann unter **Manuell hinzugefügte Knoten** ein, Adressen, getrennt durch ein Leerzeichen, ein Komma oder ein Semikolon:
 
 ```
 wohnzimmer.local
@@ -87,10 +91,10 @@ wohnzimmer.local
 
 Der Port ist optional (standardmäßig 6053). Sobald er verbunden ist, meldet der Knoten selbst seinen echten Namen: Ein per IP-Adresse hinzugefügter Knoten erscheint trotzdem unter seinem ESPHome-Namen und funktioniert weiter, auch wenn sich seine IP-Adresse später ändert.
 
-> **Hat dieser Knoten einen eigenen Verschlüsselungsschlüssel**, tragen Sie ihn unter **Schlüssel pro Knoten** mit **derselben Adresse** ein, die Sie hier angegeben haben, nicht mit seinem ESPHome-Namen:
+> **Hat dieser Knoten einen eigenen Verschlüsselungsschlüssel**, legen Sie ihn mit der Schaltfläche **Schlüssel eines Knotens festlegen** fest und geben Sie als Knoten **dieselbe Adresse** ein, die Sie hier angegeben haben, nicht seinen ESPHome-Namen:
 >
 > ```
-> 192.168.1.42|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0=
+> Knoten: 192.168.1.42
 > ```
 >
 > Der Grund ist einfach: Sein Name ist erst nach erfolgreicher Verbindung bekannt, und genau diese Verbindung braucht den Schlüssel. Das betrifft weder die von der Suche gefundenen Knoten noch jene, die den Standardschlüssel verwenden.
@@ -99,6 +103,7 @@ Der Port ist optional (standardmäßig 6053). Sobald er verbunden ist, meldet de
 
 - **Verbindung testen**: startet eine vollständige Suche und zeigt an, wie viele Knoten geantwortet haben und wie viele Funktionen verfügbar sind.
 - **Knoten neu verbinden**: schließt alle Verbindungen und öffnet sie neu. Nützlich, nachdem ein Knoten neu geflasht oder ein Schlüssel geändert wurde.
+- **Schlüssel eines Knotens festlegen**, **Schlüssel eines Knotens entfernen**, **Knotenschlüssel auflisten**: die Schlüssel einzelner Knoten, jeweils ein Knoten (siehe oben).
 
 ## Szenen
 
@@ -189,7 +194,7 @@ Zu den erkannten `device_class`-Werten gehören: `temperature`, `humidity`, `pre
 Prüfen Sie, ob Ihre Knoten eingeschaltet und mit dem WLAN verbunden sind. Blockiert Ihr Netzwerk mDNS, fügen Sie sie manuell hinzu (siehe oben).
 
 **Ein Knoten wird gefunden, erscheint aber nicht in der Liste**
-Das ist fast immer ein Verschlüsselungsschlüssel, der nicht passt. Der Knoten ist im Netzwerk sichtbar, lehnt die Verbindung aber ab. Prüfen Sie den Schlüssel in seiner YAML und verwenden Sie **Schlüssel pro Knoten**, wenn er vom Standardschlüssel abweicht.
+Das ist fast immer ein Verschlüsselungsschlüssel, der nicht passt. Der Knoten ist im Netzwerk sichtbar, lehnt die Verbindung aber ab. Prüfen Sie den Schlüssel in seiner YAML und verwenden Sie **Schlüssel eines Knotens festlegen**, wenn er vom Standardschlüssel abweicht. **Knotenschlüssel auflisten** zeigt, welche Knoten einen eigenen Schlüssel haben und ob sie verbunden sind.
 
 **Ein Knoten verschwindet und kommt wieder**
 Das ist nach einem Neustart des Knotens normal (OTA-Update, Stromausfall). Die Integration verbindet sich von selbst neu, mit wachsender Wartezeit, um das Netzwerk nie zu überlasten.

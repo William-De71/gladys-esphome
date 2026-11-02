@@ -15,7 +15,8 @@
 import { createLogger } from '@gladysassistant/integration-sdk';
 import { EsphomeManager } from './esphome/EsphomeManager.js';
 import { parseActionArguments } from './esphome/actions.js';
-import { normalizeConfig, resolveEncryptionKey } from './config.js';
+import { normalizeConfig, normalizeNodeName, resolveEncryptionKey } from './config.js';
+import { createNodeKeys, NodeKeyError, maskKey } from './nodeKeys.js';
 import {
   buildDiscoveredDevices,
   publishEntityState,
@@ -27,7 +28,18 @@ import {
 } from './devices.js';
 import { createSceneEvents } from './events.js';
 import { PARAM_ADDRESS, RECONNECT_WATCHDOG_INTERVAL_MS } from './esphome/constants.js';
-import { MESSAGES, testOk, testFailed, reconnectOk, reconnectFailed } from './messages.js';
+import {
+  MESSAGES,
+  testOk,
+  testFailed,
+  reconnectOk,
+  reconnectFailed,
+  nodeKeySet,
+  nodeKeyRemoved,
+  nodeKeyRefused,
+  nodeKeySaveFailed,
+  nodeKeysList,
+} from './messages.js';
 
 const logger = createLogger({ name: 'esphome' });
 
@@ -44,6 +56,7 @@ const logger = createLogger({ name: 'esphome' });
 export function createApp(gladys, options = {}) {
   const manager = options.manager || new EsphomeManager();
   const sceneEvents = createSceneEvents(gladys, options.sceneEvents);
+  const nodeKeys = createNodeKeys(gladys);
 
   let config = normalizeConfig();
 
@@ -282,6 +295,89 @@ export function createApp(gladys, options = {}) {
       logger.error('ESPHome reconnection failed', e);
       return reconnectFailed(e.message);
     }
+  });
+
+  /**
+   * The live session name of a node a key is filed under: its ESPHome name, or
+   * — for a node added by hand, whose key is filed under the address the user
+   * typed — the node now connected from that address.
+   * @param {string} name - The normalized name or address.
+   * @returns {string|null} The connected node name, or null.
+   */
+  function connectedNodeOf(name) {
+    if (manager.getClient(name)) {
+      return name;
+    }
+    const host = name.replace(/:\d{1,5}$/, '');
+    for (const [nodeName, address] of manager.addresses || []) {
+      if (String(address.host).toLowerCase() === host && manager.getClient(nodeName)) {
+        return nodeName;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Run a node key change, then reconnect the node with its new key. Only that
+   * node's session is closed: the others keep their key and their API slot.
+   * @param {string} node - What the user typed.
+   * @param {(reconnect: () => Promise<void>) => Promise<object>} change - Saves
+   * the change, calls `reconnect` if needed, returns the message.
+   * @returns {Promise<object>} The message shown under the button.
+   */
+  async function changeNodeKey(node, change) {
+    try {
+      const name = normalizeNodeName(node);
+      const live = name && connectedNodeOf(name);
+      const message = await change(async () => {
+        if (live) {
+          await manager.disconnect(live);
+        }
+        await publishDevices().catch((e) =>
+          logger.warn(`Re-publish after a key change failed: ${e.message}`),
+        );
+      });
+      return message;
+    } catch (e) {
+      if (e instanceof NodeKeyError) {
+        return nodeKeyRefused(e.code);
+      }
+      logger.error('Saving an ESPHome node key failed', e);
+      return nodeKeySaveFailed(e.message);
+    }
+  }
+
+  // --- Manifest actions: per-node keys, one node at a time -------------------
+  gladys.onAction('set_node_key', async (fields = {}) =>
+    changeNodeKey(fields.node, async (reconnect) => {
+      const name = await nodeKeys.set(fields.node, fields.key);
+      logger.info(`Action set_node_key -> key saved for "${name}"`);
+      await reconnect();
+      return nodeKeySet(name, Boolean(connectedNodeOf(name)));
+    }),
+  );
+
+  gladys.onAction('remove_node_key', async (fields = {}) =>
+    changeNodeKey(fields.node, async (reconnect) => {
+      const { name, removed } = await nodeKeys.remove(fields.node);
+      logger.info(`Action remove_node_key -> "${name}" ${removed ? 'removed' : 'had no key'}`);
+      if (removed) {
+        await reconnect();
+      }
+      return nodeKeyRemoved(name, removed);
+    }),
+  );
+
+  gladys.onAction('list_node_keys', async () => {
+    config = normalizeConfig(await gladys.getConfig());
+    const entries = Object.keys(config.encryption_keys)
+      .sort()
+      .map((node) => ({
+        node,
+        key: maskKey(config.encryption_keys[node]),
+        connected: Boolean(connectedNodeOf(node)),
+      }));
+    return nodeKeysList(entries, Boolean(config.encryption_key));
   });
 
   // --- Configuration updated by the user -------------------------------------

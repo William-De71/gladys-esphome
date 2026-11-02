@@ -97,15 +97,15 @@ Jedes Kategorie/Typ-Paar, das die Zuordnung erzeugen kann, wird durch einen Test
 
 ## Konfiguration
 
-| Feld                        | Standard | Verwendung                                                                                          |
-| --------------------------- | -------- | --------------------------------------------------------------------------------------------------- |
-| Verschlüsselungsschlüssel   | leer     | Der von Ihren Knoten geteilte `api: encryption: key:`; leer bei unverschlüsselten Knoten            |
-| Schlüssel pro Knoten        | leer     | `knoten\|schlüssel`, einer pro Zeile, für die Knoten mit eigenem Schlüssel                          |
-| Manuell hinzugefügte Knoten | leer     | `salon.local`, `192.168.1.42` oder `192.168.1.42:6053`, für einen Knoten, den die Suche nicht sieht |
-| Dauer der Suche (s)         | 8        | Wie lange die mDNS-Suche lauscht (3 bis 30)                                                         |
-| Verbindungs-Timeout (s)     | 10       | Wie lange auf einen Knoten gewartet wird, bevor aufgegeben wird (5 bis 60)                          |
+| Feld                        | Standard | Verwendung                                                                                                                              |
+| --------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Verschlüsselungsschlüssel   | leer     | Der von Ihren Knoten geteilte `api: encryption: key:`; leer bei unverschlüsselten Knoten                                                |
+| Schlüssel pro Knoten        | leer     | `knoten\|schlüssel`-Paare, durch Leerzeichen getrennt (einzeiliges Feld); besser die Schaltfläche **Schlüssel eines Knotens festlegen** |
+| Manuell hinzugefügte Knoten | leer     | `salon.local`, `192.168.1.42` oder `192.168.1.42:6053`, für einen Knoten, den die Suche nicht sieht                                     |
+| Dauer der Suche (s)         | 8        | Wie lange die mDNS-Suche lauscht (3 bis 30)                                                                                             |
+| Verbindungs-Timeout (s)     | 10       | Wie lange auf einen Knoten gewartet wird, bevor aufgegeben wird (5 bis 60)                                                              |
 
-Aktionen der Integrationsseite: **Verbindung testen** (eine vollständige Suche, mit der Zahl der Knoten und Funktionen) und **Knoten neu verbinden** (schließt jede Sitzung und öffnet sie neu, nach einem Neuflashen oder einer Schlüsseländerung).
+Aktionen der Integrationsseite: **Verbindung testen** (eine vollständige Suche, mit der Zahl der Knoten und Funktionen), **Knoten neu verbinden** (schließt jede Sitzung und öffnet sie neu, nach einem Neuflashen oder einer Schlüsseländerung) sowie **Schlüssel eines Knotens festlegen** / **Schlüssel eines Knotens entfernen** / **Knotenschlüssel auflisten** (jeweils ein Knoten, die anderen Schlüssel bleiben erhalten).
 
 ## Transport
 
@@ -237,13 +237,13 @@ Titel von Commits und Pull Requests folgen [Conventional Commits](https://www.co
 
 ## Fehlerbehebung
 
-| Symptom                                                 | Wahrscheinliche Ursache                                                                                       |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Kein Knoten gefunden                                    | mDNS blockiert (VLAN, Client-Isolation): Knoten manuell hinzufügen                                            |
-| Knoten im Netzwerk sichtbar, aber nicht in der Liste    | Verschlüsselungsschlüssel passt nicht: `api: encryption: key:` prüfen oder **Schlüssel pro Knoten** verwenden |
-| Gerät „Nicht erreichbar“                                | Knoten aus, außer WLAN-Reichweite oder seine vier API-Slots belegt (Home Assistant, eine offene Log-Konsole)  |
-| Ein Sensor unter „Unbekannt“                            | Keine `device_class` in der YAML: eine ergänzen und erneut suchen                                             |
-| Die Szenen-Aktion schlägt mit „declares no action“ fehl | Aktionsname weicht von `action:` in der YAML ab; der Fehler listet die Aktionen auf, die der Knoten angibt    |
+| Symptom                                                 | Wahrscheinliche Ursache                                                                                                    |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Kein Knoten gefunden                                    | mDNS blockiert (VLAN, Client-Isolation): Knoten manuell hinzufügen                                                         |
+| Knoten im Netzwerk sichtbar, aber nicht in der Liste    | Verschlüsselungsschlüssel passt nicht: `api: encryption: key:` prüfen oder **Schlüssel eines Knotens festlegen** verwenden |
+| Gerät „Nicht erreichbar“                                | Knoten aus, außer WLAN-Reichweite oder seine vier API-Slots belegt (Home Assistant, eine offene Log-Konsole)               |
+| Ein Sensor unter „Unbekannt“                            | Keine `device_class` in der YAML: eine ergänzen und erneut suchen                                                          |
+| Die Szenen-Aktion schlägt mit „declares no action“ fehl | Aktionsname weicht von `action:` in der YAML ab; der Fehler listet die Aktionen auf, die der Knoten angibt                 |
 
 Protokolle: der Tab **Überwachung** der Integration; fügen Sie dem Container `DEBUG=gladys-integration-sdk` hinzu, um die Details des SDK zu sehen.
 

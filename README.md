@@ -97,15 +97,15 @@ Every category/type pair the mapping can emit is pinned by a test against the pa
 
 ## Configuration
 
-| Field                  | Default | Use                                                                                  |
-| ---------------------- | ------- | ------------------------------------------------------------------------------------ |
-| Encryption key         | empty   | The `api: encryption: key:` shared by your nodes; empty for unencrypted nodes        |
-| Keys per node          | empty   | `node\|key`, one per line, for the nodes with a key of their own                     |
-| Nodes added by hand    | empty   | `salon.local`, `192.168.1.42` or `192.168.1.42:6053`, for a node the scan cannot see |
-| Discovery duration (s) | 8       | How long the mDNS scan listens (3 to 30)                                             |
-| Connection timeout (s) | 10      | How long to wait for a node before giving up on it (5 to 60)                         |
+| Field                  | Default | Use                                                                                             |
+| ---------------------- | ------- | ----------------------------------------------------------------------------------------------- |
+| Encryption key         | empty   | The `api: encryption: key:` shared by your nodes; empty for unencrypted nodes                   |
+| Keys per node          | empty   | `node\|key` pairs separated by spaces (single-line field); prefer the **Set a node key** button |
+| Nodes added by hand    | empty   | `salon.local`, `192.168.1.42` or `192.168.1.42:6053`, for a node the scan cannot see            |
+| Discovery duration (s) | 8       | How long the mDNS scan listens (3 to 30)                                                        |
+| Connection timeout (s) | 10      | How long to wait for a node before giving up on it (5 to 60)                                    |
 
-Actions of the integration page: **Test the connection** (a full discovery, with the number of nodes and features) and **Reconnect the nodes** (closes and reopens every session, after a reflash or a key change).
+Actions of the integration page: **Test the connection** (a full discovery, with the number of nodes and features), **Reconnect the nodes** (closes and reopens every session, after a reflash or a key change), and **Set a node key** / **Remove a node key** / **List the node keys** (one node at a time, the other keys kept).
 
 ## Transport
 
@@ -240,7 +240,7 @@ Commit and pull request titles follow [Conventional Commits](https://www.convent
 | Symptom                                          | Likely cause                                                                                    |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
 | No node found                                    | mDNS blocked (VLAN, client isolation): add the node by hand                                     |
-| Node seen on the network but not in the list     | Encryption key mismatch: check `api: encryption: key:`, or use **Keys per node**                |
+| Node seen on the network but not in the list     | Encryption key mismatch: check `api: encryption: key:`, or use **Set a node key**               |
 | Device "unreachable"                             | Node off, out of Wi-Fi range, or its four API slots taken (Home Assistant, an open log console) |
 | A sensor under "Unknown"                         | No `device_class` in the YAML: add one and scan again                                           |
 | The scene action fails with "declares no action" | Action name different from `action:` in the YAML; the error lists the actions the node declares |

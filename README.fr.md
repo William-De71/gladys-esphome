@@ -97,15 +97,15 @@ Chaque couple catégorie/type que la correspondance peut produire est vérifié 
 
 ## Configuration
 
-| Champ                            | Défaut | Usage                                                                                      |
-| -------------------------------- | ------ | ------------------------------------------------------------------------------------------ |
-| Clé de chiffrement               | vide   | La `api: encryption: key:` partagée par vos nœuds ; vide pour des nœuds non chiffrés       |
-| Clés par nœud                    | vide   | `nœud\|clé`, une par ligne, pour les nœuds qui ont leur propre clé                         |
-| Nœuds ajoutés à la main          | vide   | `salon.local`, `192.168.1.42` ou `192.168.1.42:6053`, pour un nœud que le scan ne voit pas |
-| Durée de la découverte (s)       | 8      | Durée d'écoute du scan mDNS (3 à 30)                                                       |
-| Délai d'attente de connexion (s) | 10     | Temps d'attente d'un nœud avant de l'abandonner (5 à 60)                                   |
+| Champ                            | Défaut | Usage                                                                                                             |
+| -------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------- |
+| Clé de chiffrement               | vide   | La `api: encryption: key:` partagée par vos nœuds ; vide pour des nœuds non chiffrés                              |
+| Clés par nœud                    | vide   | paires `nœud\|clé` séparées par des espaces (champ d'une ligne) ; préférez le bouton **Définir la clé d'un nœud** |
+| Nœuds ajoutés à la main          | vide   | `salon.local`, `192.168.1.42` ou `192.168.1.42:6053`, pour un nœud que le scan ne voit pas                        |
+| Durée de la découverte (s)       | 8      | Durée d'écoute du scan mDNS (3 à 30)                                                                              |
+| Délai d'attente de connexion (s) | 10     | Temps d'attente d'un nœud avant de l'abandonner (5 à 60)                                                          |
 
-Actions de la page de l'intégration : **Tester la connexion** (une découverte complète, avec le nombre de nœuds et de fonctionnalités) et **Reconnecter les nœuds** (ferme puis rouvre toutes les sessions, après un reflash ou un changement de clé).
+Actions de la page de l'intégration : **Tester la connexion** (une découverte complète, avec le nombre de nœuds et de fonctionnalités), **Reconnecter les nœuds** (ferme puis rouvre toutes les sessions, après un reflash ou un changement de clé), et **Définir la clé d'un nœud** / **Supprimer la clé d'un nœud** / **Lister les clés par nœud** (un nœud à la fois, les autres clés conservées).
 
 ## Transport
 
@@ -240,7 +240,7 @@ Les titres de commit et de pull request suivent les [Conventional Commits](https
 | Symptôme                                             | Cause probable                                                                                                          |
 | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Aucun nœud trouvé                                    | mDNS bloqué (VLAN, isolation des clients) : ajoutez le nœud à la main                                                   |
-| Nœud visible sur le réseau mais absent de la liste   | Clé de chiffrement erronée : vérifiez `api: encryption: key:`, ou utilisez **Clés par nœud**                            |
+| Nœud visible sur le réseau mais absent de la liste   | Clé de chiffrement erronée : vérifiez `api: encryption: key:`, ou utilisez **Définir la clé d'un nœud**                 |
 | Appareil « Injoignable »                             | Nœud éteint, hors de portée Wi-Fi, ou ses quatre emplacements API occupés (Home Assistant, une console de logs ouverte) |
 | Un capteur sous « Inconnu »                          | Pas de `device_class` dans le YAML : ajoutez-en un et relancez un scan                                                  |
 | L'action de scène échoue avec « declares no action » | Nom d'action différent du `action:` du YAML ; l'erreur liste les actions que le nœud déclare                            |

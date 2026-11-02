@@ -46,6 +46,7 @@ class FakeManager {
     this.states = new Map();
     this.ran = [];
     this.online = true;
+    this.usedKeys = [];
   }
 
   onState(callback) {
@@ -56,7 +57,8 @@ class FakeManager {
     this.connectionCallback = callback;
   }
 
-  async connect(node) {
+  async connect(node, key) {
+    this.usedKeys.push(key);
     if (!this.online) {
       throw new Error('connect ECONNREFUSED');
     }
@@ -90,6 +92,10 @@ class FakeManager {
     return BEEP;
   }
 
+  async disconnect(name) {
+    this.clients.delete(String(name).toLowerCase());
+  }
+
   async disconnectAll() {
     this.clients.clear();
   }
@@ -119,10 +125,15 @@ const settle = (ms = 300) => new Promise((resolve) => setTimeout(resolve, ms));
  * @param {object} [options] - `devices` the user created, scene event delays.
  * @returns {Promise<{ gladys: object, manager: FakeManager, app: object }>} The parts.
  */
-async function start({ devices = [], sceneEvents = { graceMs: 50, quietMs: 100 } } = {}) {
+async function start({
+  devices = [],
+  config = {},
+  sceneEvents = { graceMs: 50, quietMs: 100 },
+} = {}) {
   const gladys = createFakeGladys({
     selector: 'ext-esphome',
     devices,
+    config,
     scanResults: {
       mdns: [{ name: 'salon._esphomelib._tcp.local', addresses: ['192.168.1.42'], port: 6053 }],
     },
@@ -297,6 +308,53 @@ test('an event the action fires on its own node does not start a scene again (no
   manager.push(BUTTON, { key: 3, eventType: 'single' });
   await settle(20);
   assert.equal(gladys.fake.sceneEvents.length, 1, 'only the event after the quiet window');
+  await app.shutdown();
+});
+
+const KEY = 'kBv1s2f9xQm4ZtAbCdEfGhIjKlMnOpQrStUvWxYz0+/=';
+
+test('set_node_key saves one key, reconnects the node with it, and says it answered', async () => {
+  const { gladys, manager, app } = await start({ config: { encryption_key: 'default=' } });
+  assert.equal(manager.usedKeys.at(-1), 'default=');
+
+  const ack = await gladys.fake.action('set_node_key', { node: 'Salon', key: KEY });
+  assert.equal(ack.success, true);
+  assert.match(ack.data.message.fr, /Clé enregistrée pour « salon » : le nœud est connecté/);
+  assert.deepEqual(JSON.parse(gladys.fake.config.node_keys), { salon: KEY });
+  assert.equal(manager.usedKeys.at(-1), KEY);
+  await app.shutdown();
+});
+
+test('set_node_key refuses a malformed key without saving anything', async () => {
+  const { gladys, app } = await start();
+  const ack = await gladys.fake.action('set_node_key', { node: 'salon', key: 'salon|abc=' });
+  assert.match(ack.data.message.en, /Nothing saved/);
+  assert.equal(gladys.fake.config.node_keys, undefined);
+  await app.shutdown();
+});
+
+test('list_node_keys shows the masked keys, the form field included, and the connection', async () => {
+  const { gladys, app } = await start({
+    config: { encryption_key: 'default=', encryption_keys: `salon|${KEY} garage|${KEY}` },
+  });
+  const ack = await gladys.fake.action('list_node_keys');
+  const text = ack.data.message.en;
+  assert.match(text, /• garage — kBv1…= — not connected/);
+  assert.match(text, /• salon — kBv1…= — connected/);
+  assert.match(text, /default key/);
+  assert.doesNotMatch(text, new RegExp(KEY.slice(4, 20)));
+  await app.shutdown();
+});
+
+test('remove_node_key puts the node back on the default key', async () => {
+  const { gladys, manager, app } = await start({
+    config: { encryption_key: 'default=', node_keys: JSON.stringify({ salon: KEY }) },
+  });
+  assert.equal(manager.usedKeys.at(-1), KEY);
+  const ack = await gladys.fake.action('remove_node_key', { node: 'salon' });
+  assert.match(ack.data.message.en, /now uses the default key/);
+  assert.deepEqual(JSON.parse(gladys.fake.config.node_keys), {});
+  assert.equal(manager.usedKeys.at(-1), 'default=');
   await app.shutdown();
 });
 

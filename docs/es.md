@@ -58,14 +58,18 @@ Si **todos** sus nodos comparten la misma clave (el caso más habitual cuando se
 
 ### 2. Los nodos con una clave distinta
 
-Si algunos nodos tienen su propia clave, rellene **Claves por nodo**, un nodo por línea:
+Si algunos nodos tienen su propia clave, use el botón **Definir la clave de un nodo**, al final de la página de configuración de la integración: escriba el nombre del nodo (el de `esphome: name:`) y su clave, y valide. El nodo se reconecta al instante con esa clave, y el mensaje indica si ha respondido. Repita para cada nodo: las claves ya guardadas se conservan.
 
-```
-salon|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0=
-cocina|9xQm4Zt6R8s0T2u4V6w8X0y2Z4a6B8c0D2e4F6g8H0=
-```
+- **Listar las claves por nodo** muestra los nodos con una clave específica, la clave oculta (`kBv1…=`), y si cada uno está conectado.
+- **Eliminar la clave de un nodo** lo devuelve a la clave por defecto.
 
-El nombre del nodo es el declarado en `esphome: name:`. Estas claves tienen prioridad sobre la clave por defecto.
+Estas claves tienen prioridad sobre la clave por defecto.
+
+> El campo **Claves por nodo** de la configuración sigue existiendo, pero es de **una sola línea**: separe los pares `nodo|clave` con un espacio, una coma o un punto y coma. Al ser un campo secreto, parece vacío una vez guardado, y guardarlo de nuevo sustituye todas las claves que contenía. En cuanto use uno de los botones anteriores, las claves escritas en ese campo pasan a los botones y el campo se vacía.
+>
+> ```
+> salon|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0= cocina|9xQm4Zt6R8s0T2u4V6w8X0y2Z4a6B8c0D2e4F6g8H0=
+> ```
 
 ### 3. Descubra sus dispositivos
 
@@ -75,7 +79,7 @@ La búsqueda utiliza mDNS (el protocolo con el que ESPHome se anuncia en la red)
 
 ### 4. Si no se encuentra un nodo
 
-Algunas redes bloquean el mDNS (VLAN separadas, Wi-Fi con aislamiento de clientes, router que filtra el multicast). En ese caso, declare el nodo a mano en **Nodos añadidos a mano**, una dirección por línea:
+Algunas redes bloquean el mDNS (VLAN separadas, Wi-Fi con aislamiento de clientes, router que filtra el multicast). En ese caso, declare el nodo a mano en **Nodos añadidos a mano**, direcciones separadas por un espacio, una coma o un punto y coma:
 
 ```
 salon.local
@@ -87,10 +91,10 @@ salon.local
 
 El puerto es opcional (6053 por defecto). Una vez conectado, el nodo anuncia él mismo su nombre real: un nodo añadido por su dirección IP aparecerá con su nombre ESPHome, y seguirá funcionando aunque su dirección IP cambie después.
 
-> **Si ese nodo tiene una clave de cifrado propia**, indíquela en **Claves por nodo** usando **la misma dirección** que ha escrito aquí, y no su nombre ESPHome:
+> **Si ese nodo tiene una clave de cifrado propia**, defínala con el botón **Definir la clave de un nodo** escribiendo como nodo **la misma dirección** que ha escrito aquí, y no su nombre ESPHome:
 >
 > ```
-> 192.168.1.42|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0=
+> Nodo: 192.168.1.42
 > ```
 >
 > El motivo es sencillo: su nombre solo se conoce una vez establecida la conexión, y la conexión necesita precisamente la clave. Esto no afecta a los nodos encontrados por la búsqueda ni a los que usan la clave por defecto.
@@ -99,6 +103,7 @@ El puerto es opcional (6053 por defecto). Una vez conectado, el nodo anuncia él
 
 - **Probar la conexión**: vuelve a lanzar una búsqueda completa y le indica cuántos nodos han respondido y cuántas funcionalidades están disponibles.
 - **Reconectar los nodos**: cierra todas las conexiones y las vuelve a abrir. Útil tras reprogramar un nodo o cambiar una clave.
+- **Definir la clave de un nodo**, **Eliminar la clave de un nodo**, **Listar las claves por nodo**: las claves propias de algunos nodos, un nodo cada vez (ver más arriba).
 
 ## Escenas
 
@@ -189,7 +194,7 @@ Entre los `device_class` reconocidos están: `temperature`, `humidity`, `pressur
 Compruebe que sus nodos estén encendidos y conectados al Wi-Fi. Si su red bloquea el mDNS, añádalos a mano (ver más arriba).
 
 **Se encuentra un nodo, pero no aparece en la lista**
-Casi siempre se trata de una clave de cifrado que no coincide. El nodo es visible en la red, pero rechaza la conexión. Compruebe la clave en su YAML y utilice **Claves por nodo** si difiere de la clave por defecto.
+Casi siempre se trata de una clave de cifrado que no coincide. El nodo es visible en la red, pero rechaza la conexión. Compruebe la clave en su YAML y utilice **Definir la clave de un nodo** si difiere de la clave por defecto. **Listar las claves por nodo** muestra qué nodos tienen una clave específica y si están conectados.
 
 **Un nodo desaparece y vuelve a aparecer**
 Es normal tras un reinicio del nodo (actualización OTA, corte de corriente). La integración se reconecta automáticamente, con un retardo creciente para no saturar la red.

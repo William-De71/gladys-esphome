@@ -58,14 +58,18 @@ Si **tous** vos nœuds partagent la même clé (le cas le plus courant quand on 
 
 ### 2. Les nœuds ayant une clé différente
 
-Si certains nœuds ont leur propre clé, remplissez **Clés par nœud**, une ligne par nœud :
+Si certains nœuds ont leur propre clé, utilisez le bouton **Définir la clé d'un nœud**, en bas de la page de configuration de l'intégration : saisissez le nom du nœud (celui de `esphome: name:`) et sa clé, puis validez. Le nœud est aussitôt reconnecté avec cette clé, et le message indique s'il a répondu. Recommencez pour chaque nœud : les clés déjà enregistrées sont conservées.
 
-```
-salon|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0=
-cuisine|9xQm4Zt6R8s0T2u4V6w8X0y2Z4a6B8c0D2e4F6g8H0=
-```
+- **Lister les clés par nœud** affiche les nœuds qui ont une clé spécifique, la clé masquée (`kBv1…=`), et si chacun est connecté.
+- **Supprimer la clé d'un nœud** le remet sur la clé par défaut.
 
-Le nom du nœud est celui déclaré dans `esphome: name:`. Ces clés sont prioritaires sur la clé par défaut.
+Ces clés sont prioritaires sur la clé par défaut.
+
+> Le champ **Clés par nœud** de la configuration existe toujours, mais il tient sur **une seule ligne** : séparez les paires `nœud|clé` par un espace, une virgule ou un point-virgule. Comme c'est un champ secret, il paraît vide une fois enregistré, et l'enregistrer à nouveau remplace toutes les clés qu'il contenait. Dès que vous utilisez un des boutons ci-dessus, les clés saisies dans ce champ sont reprises par les boutons et le champ est vidé.
+>
+> ```
+> salon|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0= cuisine|9xQm4Zt6R8s0T2u4V6w8X0y2Z4a6B8c0D2e4F6g8H0=
+> ```
 
 ### 3. Découvrez vos appareils
 
@@ -75,7 +79,7 @@ La découverte utilise le mDNS (le protocole par lequel ESPHome s'annonce sur le
 
 ### 4. Si un nœud n'est pas trouvé
 
-Certains réseaux bloquent le mDNS (VLAN séparés, Wi-Fi avec isolation des clients, routeur filtrant le multicast). Dans ce cas, renseignez le nœud à la main dans **Nœuds ajoutés à la main**, une adresse par ligne :
+Certains réseaux bloquent le mDNS (VLAN séparés, Wi-Fi avec isolation des clients, routeur filtrant le multicast). Dans ce cas, renseignez le nœud à la main dans **Nœuds ajoutés à la main**, des adresses séparées par un espace, une virgule ou un point-virgule :
 
 ```
 salon.local
@@ -87,10 +91,10 @@ salon.local
 
 Le port est facultatif (6053 par défaut). Une fois connecté, le nœud annonce lui-même son vrai nom : un nœud ajouté par son adresse IP apparaîtra bien sous son nom ESPHome, et il continuera de fonctionner même si son adresse IP change ensuite.
 
-> **Si ce nœud a une clé de chiffrement qui lui est propre**, indiquez-la dans **Clés par nœud** en utilisant **la même adresse** que celle saisie ici, et non son nom ESPHome :
+> **Si ce nœud a une clé de chiffrement qui lui est propre**, définissez-la avec le bouton **Définir la clé d'un nœud** en saisissant, comme nœud, **la même adresse** que celle saisie ici, et non son nom ESPHome :
 >
 > ```
-> 192.168.1.42|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0=
+> Nœud : 192.168.1.42
 > ```
 >
 > La raison est simple : son nom n'est connu qu'une fois la connexion établie, et la connexion a justement besoin de la clé. Cela ne concerne pas les nœuds trouvés par le scan, ni ceux qui utilisent la clé par défaut.
@@ -99,6 +103,7 @@ Le port est facultatif (6053 par défaut). Une fois connecté, le nœud annonce 
 
 - **Tester la connexion** : relance une découverte complète et vous indique combien de nœuds ont répondu et combien de fonctionnalités sont disponibles.
 - **Reconnecter les nœuds** : ferme toutes les connexions et les rouvre. Utile après avoir reflashé un nœud ou changé une clé.
+- **Définir la clé d'un nœud**, **Supprimer la clé d'un nœud**, **Lister les clés par nœud** : les clés propres à certains nœuds, un nœud à la fois (voir plus haut).
 
 ## Scènes
 
@@ -189,7 +194,7 @@ Les `device_class` reconnus incluent : `temperature`, `humidity`, `pressure`, `i
 Vérifiez que vos nœuds sont allumés et connectés au Wi-Fi. Si votre réseau bloque le mDNS, ajoutez-les à la main (voir plus haut).
 
 **Un nœud est trouvé mais n'apparaît pas dans la liste**
-C'est presque toujours une clé de chiffrement qui ne correspond pas. Le nœud est visible sur le réseau, mais refuse la connexion. Vérifiez la clé dans son YAML, et utilisez **Clés par nœud** si elle diffère de la clé par défaut.
+C'est presque toujours une clé de chiffrement qui ne correspond pas. Le nœud est visible sur le réseau, mais refuse la connexion. Vérifiez la clé dans son YAML, et utilisez **Définir la clé d'un nœud** si elle diffère de la clé par défaut. **Lister les clés par nœud** montre quels nœuds ont une clé spécifique et s'ils sont connectés.
 
 **Un nœud disparaît puis revient**
 C'est normal après un redémarrage du nœud (mise à jour OTA, coupure de courant). L'intégration se reconnecte automatiquement, avec un délai croissant pour ne pas saturer le réseau.
