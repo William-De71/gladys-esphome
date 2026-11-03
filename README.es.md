@@ -16,7 +16,7 @@ Integración externa de [Gladys Assistant](https://gladysassistant.com) para los
 ## Funcionalidades
 
 - **Descubrimiento automático**: Gladys capta los anuncios mDNS de los nodos; no hay nada que escribir, ni siquiera cuando cambia una concesión DHCP.
-- **Todas las entidades habituales**: sensores, sensores binarios, interruptores, luces, persianas, ventiladores, cerraduras, sirenas, válvulas, botones, números, textos y termostatos (tabla más abajo).
+- **Todas las entidades habituales**: sensores, sensores binarios, interruptores, luces, persianas, ventiladores, cerraduras, sirenas, válvulas, botones, números, textos, termostatos y aires acondicionados (tabla más abajo).
 - **Tiempo real**: los nodos envían sus cambios por una sesión que se mantiene abierta; a Gladys solo se envían los valores que han cambiado.
 - **Escenas**: inicie una escena cuando se activa un `event` de ESPHome (un doble clic, un timbre) o cuando un nodo se desconecta, y ejecute desde una escena las acciones declaradas en el YAML de un nodo (`api: actions:`).
 - **Resistente**: un nodo que estaba apagado al arrancar Gladys, o que la búsqueda no detectó, se reconecta por sí solo; se preservan las ranuras API de cada nodo.
@@ -78,7 +78,7 @@ sequenceDiagram
 | `valve`         | Abierta / cerrada                                                                              |
 | `button`        | Pulsar                                                                                         |
 | `number`        | Valor editable limitado por `min_value` / `max_value` del YAML                                 |
-| `climate`       | Temperatura de consigna (una sola) + temperatura actual                                        |
+| `climate`       | Consigna, temperatura actual, encendido, modo, ventilador, oscilación (aire acondicionado)     |
 | `event`         | Ninguna funcionalidad: el disparador de escena «Evento de ESPHome»                             |
 
 Los tipos de entidad sin equivalente en Gladys (`media_player`, `camera`, `select`, `date`, …) se omiten en el descubrimiento en lugar de asociarse a algo que no podría funcionar. Un sensor `energy` en kWh o Wh es un índice acumulado: Gladys calcula a partir de él el consumo y su coste.

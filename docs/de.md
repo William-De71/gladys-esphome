@@ -8,25 +8,36 @@ Mit dieser Integration steuern Sie Ihre **ESPHome**-Geräte (ESP32, ESP8266) aus
 
 Anders als ein Gerät von der Stange stellt ein ESPHome-Knoten genau das bereit, was **Sie** in seiner YAML-Datei angegeben haben. Die Integration richtet sich daher nach dem, was jeder Knoten meldet:
 
-| ESPHome-Komponente | Was Sie in Gladys erhalten                                     |
-| ------------------ | -------------------------------------------------------------- |
-| `sensor`           | Numerischer Sensor (Temperatur, Luftfeuchtigkeit, Leistung, …) |
-| `binary_sensor`    | Binärsensor (Bewegung, Öffnung, Anwesenheit, Leck, Rauch, …)   |
-| `text_sensor`      | Textsensor (nur lesend)                                        |
-| `text`             | Beschreibbarer Text: eine Nachricht an den Knoten (Display)    |
-| `switch`           | Schalter (ein/aus)                                             |
-| `light`            | Lampe: ein/aus, Helligkeit, Farbe, Farbtemperatur              |
-| `cover`            | Rollladen oder Vorhang: öffnen, schließen, stoppen, Position   |
-| `fan`              | Ventilator: ein/aus und Geschwindigkeit                        |
-| `lock`             | Schloss: verriegeln / entriegeln                               |
-| `siren`            | Sirene: ein / aus                                              |
-| `valve`            | Ventil: offen / geschlossen                                    |
-| `button`           | Taster                                                         |
-| `number`           | Beschreibbarer Zahlenwert (Schieberegler)                      |
-| `climate`          | Thermostat: Sollwert (ein einzelner) und gemessene Temperatur  |
-| `event`            | Keine Funktion: der Szenen-Auslöser „ESPHome-Ereignis“         |
+| ESPHome-Komponente | Was Sie in Gladys erhalten                                                                     |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| `sensor`           | Numerischer Sensor (Temperatur, Luftfeuchtigkeit, Leistung, …)                                 |
+| `binary_sensor`    | Binärsensor (Bewegung, Öffnung, Anwesenheit, Leck, Rauch, …)                                   |
+| `text_sensor`      | Textsensor (nur lesend)                                                                        |
+| `text`             | Beschreibbarer Text: eine Nachricht an den Knoten (Display)                                    |
+| `switch`           | Schalter (ein/aus)                                                                             |
+| `light`            | Lampe: ein/aus, Helligkeit, Farbe, Farbtemperatur                                              |
+| `cover`            | Rollladen oder Vorhang: öffnen, schließen, stoppen, Position                                   |
+| `fan`              | Ventilator: ein/aus und Geschwindigkeit                                                        |
+| `lock`             | Schloss: verriegeln / entriegeln                                                               |
+| `siren`            | Sirene: ein / aus                                                                              |
+| `valve`            | Ventil: offen / geschlossen                                                                    |
+| `button`           | Taster                                                                                         |
+| `number`           | Beschreibbarer Zahlenwert (Schieberegler)                                                      |
+| `climate`          | Thermostat oder Klimaanlage: Sollwert, gemessene Temperatur, Ein/Aus, Modus, Lüfter, Schwenken |
+| `event`            | Keine Funktion: der Szenen-Auslöser „ESPHome-Ereignis“                                         |
 
 Typen ohne Entsprechung in Gladys (`media_player`, `camera`, `select`, `date`, …) werden bei der Suche einfach ausgelassen. Ein `energy`-Sensor (in kWh oder Wh) ist ein kumulativer Zählerstand: Gladys berechnet daraus den Verbrauch und seine Kosten.
+
+### Klimaanlage (`climate`)
+
+Eine `climate`-Entität behält ihren Sollwert (einen einzigen) und ihre gemessene Temperatur und erhält zusätzlich die Steuerungen der Gladys-Kategorie **Klimaanlage**, jede nur, wenn die Firmware sie meldet:
+
+- **Ein / Aus**: ESPHome kennt kein separates „Ein“, ein Gerät ist eingeschaltet, sobald sein Modus nicht `off` ist. Beim Einschalten aus Gladys wird der zuletzt verwendete Modus fortgesetzt (oder der Automatikmodus, wenn die Integration das Gerät nie eingeschaltet gesehen hat).
+- **Modus**: Automatik, Kühlen, Heizen, Entfeuchten, Lüften (`heat_cool` oder `auto`, `cool`, `heat`, `dry`, `fan_only` in ESPHome). Nur die Modi Ihres Geräts werden angeboten. Die Wahl eines Modus bei ausgeschaltetem Gerät schaltet es nicht ein: Es ist der Modus, in dem es startet.
+- **Lüfterstufe**: Automatik, leise, niedrig, mittel, hoch (`auto`, `quiet`, `low`, `medium`, `high` und `middle` dazwischen). Eigene Lüftermodi (`custom_fan_modes`) werden nicht übernommen.
+- **Vertikales** und **horizontales Schwenken**: eine Steuerung pro Achse, die andere Achse behält ihre Einstellung.
+
+Ein bereits in Gladys hinzugefügtes Thermostat behält seine Funktionen: Um die neuen zu erhalten, öffnen Sie die ESPHome-Erkennung und klicken Sie beim Gerät auf **Aktualisieren**.
 
 ### Zustände kommen in Echtzeit an
 
@@ -65,7 +76,7 @@ Haben einige Knoten einen eigenen Schlüssel, nutzen Sie die Schaltfläche **Sch
 
 Diese Schlüssel haben Vorrang vor dem Standardschlüssel.
 
-> Das Feld **Schlüssel pro Knoten** der Konfiguration gibt es weiterhin, aber es ist **einzeilig**: Trennen Sie die `knoten|schlüssel`-Paare durch ein Leerzeichen, ein Komma oder ein Semikolon. Als geheimes Feld wirkt es nach dem Speichern leer, und erneutes Speichern ersetzt alle darin enthaltenen Schlüssel. Sobald Sie eine der obigen Schaltflächen verwenden, werden die in diesem Feld eingegebenen Schlüssel übernommen und das Feld geleert.
+> Das Feld **Schlüssel pro Knoten** der Konfiguration gibt es weiterhin, aber es ist **einzeilig**: Trennen Sie die `knoten|schlüssel`-Paare durch ein Leerzeichen, ein Komma oder ein Semikolon. Bei jedem Speichern werden die eingegebenen Paare zu den bereits gespeicherten Schlüsseln **hinzugefügt**, danach wird das Feld geleert: Ein später eingegebener Knoten lässt die anderen nicht mehr verschwinden. Aus der YAML kopierte Anführungszeichen (`key: "…"`) werden entfernt. Um einen Schlüssel zu entfernen, verwenden Sie **Schlüssel eines Knotens entfernen**.
 >
 > ```
 > wohnzimmer|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0= kueche|9xQm4Zt6R8s0T2u4V6w8X0y2Z4a6B8c0D2e4F6g8H0=

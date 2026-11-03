@@ -30,6 +30,7 @@ import {
   DEVICE_FEATURE_TYPES,
   DEVICE_FEATURE_UNITS,
 } from '@gladysassistant/integration-sdk';
+import { describeClimateControls } from './climate.js';
 
 const { SENSOR, SWITCH, LIGHT, SHUTTER, BUTTON, THERMOSTAT, TEXT } = DEVICE_FEATURE_TYPES;
 
@@ -718,7 +719,10 @@ function describeFan(entity) {
 
 /**
  * Features of an ESPHome `climate`: the target temperature it accepts (single
- * setpoint only), and the current temperature when the firmware measures one.
+ * setpoint only), the current temperature when the firmware measures one, and
+ * the air-conditioning controls it supports (power, mode, fan, swing — see
+ * climate.js). The first two keep their 1.1.0 thermostat and sensor pairs, so
+ * the devices created before the controls existed keep their features.
  * @param {object} entity - The ESPHome climate entity.
  * @returns {object[]} The feature descriptors.
  */
@@ -760,6 +764,14 @@ function describeClimate(entity) {
       max: 250,
     });
   }
+
+  features.push(
+    ...describeClimateControls(
+      entity,
+      DEVICE_FEATURE_CATEGORIES.AIR_CONDITIONING,
+      DEVICE_FEATURE_TYPES.AIR_CONDITIONING,
+    ),
+  );
 
   return features;
 }

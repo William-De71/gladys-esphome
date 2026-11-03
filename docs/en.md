@@ -8,25 +8,36 @@ This integration controls your **ESPHome** devices (ESP32, ESP8266) from Gladys 
 
 Unlike an off-the-shelf device, an ESPHome node exposes exactly what **you** declared in its YAML file. The integration therefore adapts to whatever each node announces:
 
-| ESPHome component | What you get in Gladys                                  |
-| ----------------- | ------------------------------------------------------- |
-| `sensor`          | Numeric sensor (temperature, humidity, power, battery…) |
-| `binary_sensor`   | Binary sensor (motion, opening, presence, leak, smoke…) |
-| `text_sensor`     | Text sensor (read-only)                                 |
-| `text`            | Writable text: send a message to a node (display)       |
-| `switch`          | Switch (on/off)                                         |
-| `light`           | Light: on/off, brightness, color, color temperature     |
-| `cover`           | Cover or curtain: open, close, stop, position           |
-| `fan`             | Fan: on/off and speed                                   |
-| `lock`            | Lock: lock / unlock                                     |
-| `siren`           | Siren: on / off                                         |
-| `valve`           | Valve: open / closed                                    |
-| `button`          | Push button                                             |
-| `number`          | Writable numeric setting (slider)                       |
-| `climate`         | Thermostat: setpoint (single) and measured temperature  |
-| `event`           | No feature: the scene trigger "ESPHome event"           |
+| ESPHome component | What you get in Gladys                                                                 |
+| ----------------- | -------------------------------------------------------------------------------------- |
+| `sensor`          | Numeric sensor (temperature, humidity, power, battery…)                                |
+| `binary_sensor`   | Binary sensor (motion, opening, presence, leak, smoke…)                                |
+| `text_sensor`     | Text sensor (read-only)                                                                |
+| `text`            | Writable text: send a message to a node (display)                                      |
+| `switch`          | Switch (on/off)                                                                        |
+| `light`           | Light: on/off, brightness, color, color temperature                                    |
+| `cover`           | Cover or curtain: open, close, stop, position                                          |
+| `fan`             | Fan: on/off and speed                                                                  |
+| `lock`            | Lock: lock / unlock                                                                    |
+| `siren`           | Siren: on / off                                                                        |
+| `valve`           | Valve: open / closed                                                                   |
+| `button`          | Push button                                                                            |
+| `number`          | Writable numeric setting (slider)                                                      |
+| `climate`         | Thermostat or air conditioner: setpoint, measured temperature, power, mode, fan, swing |
+| `event`           | No feature: the scene trigger "ESPHome event"                                          |
 
 Types Gladys has no equivalent for (`media_player`, `camera`, `select`, `date`…) are simply left out of discovery. An `energy` sensor (in kWh or Wh) is a cumulative index: Gladys computes the consumption and its cost from it.
+
+### Air conditioning (`climate`)
+
+A `climate` entity keeps its setpoint (a single one) and its measured temperature, and also gets the controls of the Gladys **Air conditioning** category, each one only when the firmware declares it:
+
+- **Power**: ESPHome has no separate "on", a unit is on as soon as its mode is not `off`. Turning it on from Gladys resumes the last mode it ran in (or the auto mode when the integration never saw it on).
+- **Mode**: auto, cool, heat, dry, fan (`heat_cool` or `auto`, `cool`, `heat`, `dry`, `fan_only` in ESPHome). Only the modes of your unit are offered. Choosing a mode while the unit is off does not turn it on: it is the mode it will start in.
+- **Fan speed**: auto, quiet, low, medium, high (`auto`, `quiet`, `low`, `medium`, `high`, and `middle` in between). Custom fan modes (`custom_fan_modes`) are not included.
+- **Vertical** and **horizontal swing**: one control per axis, the other axis keeps its setting.
+
+A thermostat already added to Gladys keeps its features: to get the new ones, open the ESPHome discovery and click **Update** on the device.
 
 ### States arrive in real time
 
@@ -65,7 +76,7 @@ If some nodes have their own key, use the **Set a node key** button at the botto
 
 These keys take precedence over the default key.
 
-> The **Keys per node** field of the configuration is still there, but it is **a single line**: separate the `node|key` pairs with a space, a comma or a semicolon. Being a secret field, it looks empty once saved, and saving it again replaces every key it held. As soon as you use one of the buttons above, the keys typed in that field are taken over by the buttons and the field is emptied.
+> The **Keys per node** field of the configuration is still there, but it is **a single line**: separate the `node|key` pairs with a space, a comma or a semicolon. On every save, the typed pairs **are added** to the keys already saved, then the field is emptied: typing a new node later no longer makes the others disappear. Quotes copied from the YAML (`key: "…"`) are removed. To remove a key, use **Remove a node key**.
 >
 > ```
 > living_room|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0= kitchen|9xQm4Zt6R8s0T2u4V6w8X0y2Z4a6B8c0D2e4F6g8H0=

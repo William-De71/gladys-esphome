@@ -8,25 +8,36 @@ Cette intégration permet de piloter vos appareils **ESPHome** (ESP32, ESP8266) 
 
 Contrairement à un appareil du commerce, un nœud ESPHome expose exactement ce que **vous** avez déclaré dans son fichier YAML. L'intégration s'adapte donc à ce que chaque nœud annonce :
 
-| Composant ESPHome | Ce que vous obtenez dans Gladys                                       |
-| ----------------- | --------------------------------------------------------------------- |
-| `sensor`          | Capteur numérique (température, humidité, puissance, batterie...)     |
-| `binary_sensor`   | Capteur binaire (mouvement, ouverture, présence, fuite, fumée...)     |
-| `text_sensor`     | Capteur texte (lecture seule)                                         |
-| `text`            | Texte modifiable : envoyer un message au nœud (écran)                 |
-| `switch`          | Interrupteur (on/off)                                                 |
-| `light`           | Lampe : on/off, luminosité, couleur, température de couleur           |
-| `cover`           | Volet ou rideau : ouvrir, fermer, arrêter, position                   |
-| `fan`             | Ventilateur : on/off et vitesse                                       |
-| `lock`            | Serrure : verrouiller / déverrouiller                                 |
-| `siren`           | Sirène : marche / arrêt                                               |
-| `valve`           | Vanne : ouverte / fermée                                              |
-| `button`          | Bouton poussoir                                                       |
-| `number`          | Réglage numérique modifiable (curseur)                                |
-| `climate`         | Thermostat : consigne (une seule) et température mesurée              |
-| `event`           | Aucune fonctionnalité : le déclencheur de scène « Événement ESPHome » |
+| Composant ESPHome | Ce que vous obtenez dans Gladys                                                                           |
+| ----------------- | --------------------------------------------------------------------------------------------------------- |
+| `sensor`          | Capteur numérique (température, humidité, puissance, batterie...)                                         |
+| `binary_sensor`   | Capteur binaire (mouvement, ouverture, présence, fuite, fumée...)                                         |
+| `text_sensor`     | Capteur texte (lecture seule)                                                                             |
+| `text`            | Texte modifiable : envoyer un message au nœud (écran)                                                     |
+| `switch`          | Interrupteur (on/off)                                                                                     |
+| `light`           | Lampe : on/off, luminosité, couleur, température de couleur                                               |
+| `cover`           | Volet ou rideau : ouvrir, fermer, arrêter, position                                                       |
+| `fan`             | Ventilateur : on/off et vitesse                                                                           |
+| `lock`            | Serrure : verrouiller / déverrouiller                                                                     |
+| `siren`           | Sirène : marche / arrêt                                                                                   |
+| `valve`           | Vanne : ouverte / fermée                                                                                  |
+| `button`          | Bouton poussoir                                                                                           |
+| `number`          | Réglage numérique modifiable (curseur)                                                                    |
+| `climate`         | Thermostat ou climatisation : consigne, température mesurée, marche/arrêt, mode, ventilation, oscillation |
+| `event`           | Aucune fonctionnalité : le déclencheur de scène « Événement ESPHome »                                     |
 
 Les types qui n'ont pas d'équivalent dans Gladys (`media_player`, `camera`, `select`, `date`...) sont simplement ignorés lors de la découverte. Un capteur `energy` (en kWh ou en Wh) est un index cumulé : Gladys en calcule la consommation et son coût.
+
+### Climatisation (`climate`)
+
+Une entité `climate` garde sa consigne (une seule) et sa température mesurée, et reçoit en plus les commandes de la catégorie **Climatisation** de Gladys, chacune seulement si le firmware la déclare :
+
+- **Marche / arrêt** : ESPHome n'a pas de « marche » séparée, un climatiseur est allumé dès que son mode n'est pas `off`. Rallumer depuis Gladys reprend le dernier mode utilisé (ou le mode auto si l'intégration ne l'a jamais vu allumé).
+- **Mode** : auto, froid, chaud, déshumidification, ventilation (`heat_cool` ou `auto`, `cool`, `heat`, `dry`, `fan_only` dans ESPHome). Seuls les modes de votre appareil sont proposés. Choisir un mode quand le climatiseur est éteint ne l'allume pas : c'est le mode dans lequel il démarrera.
+- **Ventilation** : auto, silencieux, faible, moyenne, forte (`auto`, `quiet`, `low`, `medium`, `high`, et `middle` en intermédiaire). Les modes personnalisés (`custom_fan_modes`) ne sont pas repris.
+- **Oscillation verticale** et **horizontale** : une commande par axe, l'autre axe garde son réglage.
+
+Un thermostat déjà ajouté dans Gladys garde ses fonctionnalités : pour obtenir les nouvelles, ouvrez la découverte ESPHome et cliquez sur **Mettre à jour** sur l'appareil.
 
 ### Les états arrivent en temps réel
 
@@ -65,7 +76,7 @@ Si certains nœuds ont leur propre clé, utilisez le bouton **Définir la clé d
 
 Ces clés sont prioritaires sur la clé par défaut.
 
-> Le champ **Clés par nœud** de la configuration existe toujours, mais il tient sur **une seule ligne** : séparez les paires `nœud|clé` par un espace, une virgule ou un point-virgule. Comme c'est un champ secret, il paraît vide une fois enregistré, et l'enregistrer à nouveau remplace toutes les clés qu'il contenait. Dès que vous utilisez un des boutons ci-dessus, les clés saisies dans ce champ sont reprises par les boutons et le champ est vidé.
+> Le champ **Clés par nœud** de la configuration existe toujours, mais il tient sur **une seule ligne** : séparez les paires `nœud|clé` par un espace, une virgule ou un point-virgule. À chaque enregistrement, les paires saisies **s'ajoutent** aux clés déjà enregistrées, puis le champ est vidé : saisir un nouveau nœud plus tard ne fait plus disparaître les autres. Les guillemets copiés depuis le YAML (`key: "…"`) sont retirés. Pour retirer une clé, utilisez **Supprimer la clé d'un nœud**.
 >
 > ```
 > salon|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0= cuisine|9xQm4Zt6R8s0T2u4V6w8X0y2Z4a6B8c0D2e4F6g8H0=

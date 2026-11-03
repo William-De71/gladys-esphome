@@ -24,6 +24,17 @@
 
 import { DEVICE_FEATURE_CATEGORIES } from '@gladysassistant/integration-sdk';
 import { ENTITY_SCHEMAS } from 'esphome-client';
+import { readClimateControl } from './climate.js';
+
+// The air-conditioning features of a climate (climate.js), read and written
+// from the whole climate state rather than from one field.
+export const CLIMATE_CONTROL_KEYS = [
+  'power',
+  'mode',
+  'fan_mode',
+  'swing_vertical',
+  'swing_horizontal',
+];
 
 // Gladys shutter/curtain state values (server/utils/constants.js).
 export const COVER_STATE = {
@@ -167,6 +178,9 @@ export function unpackColor(color) {
  */
 export function readState(feature, rawEvent) {
   const event = withWireDefaults(rawEvent);
+  if (feature.entityType === 'climate' && CLIMATE_CONTROL_KEYS.includes(feature.key)) {
+    return readClimateControl(feature.key, event);
+  }
   switch (feature.key) {
     case 'state':
       return readMainState(feature, event);

@@ -16,7 +16,7 @@ Intégration externe [Gladys Assistant](https://gladysassistant.com) pour les ap
 ## Fonctionnalités
 
 - **Découverte automatique** : Gladys capte les annonces mDNS des nœuds ; rien à saisir, même quand un bail DHCP change.
-- **Toutes les entités courantes** : capteurs, capteurs binaires, interrupteurs, lampes, volets, ventilateurs, serrures, sirènes, vannes, boutons, nombres, textes et thermostats (tableau ci-dessous).
+- **Toutes les entités courantes** : capteurs, capteurs binaires, interrupteurs, lampes, volets, ventilateurs, serrures, sirènes, vannes, boutons, nombres, textes thermostats et climatiseurs (tableau ci-dessous).
 - **Temps réel** : les nœuds poussent leurs changements sur une session maintenue ouverte ; seules les valeurs qui ont changé sont envoyées à Gladys.
 - **Scènes** : démarrez une scène quand un `event` ESPHome se déclenche (un double clic, une sonnette) ou quand un nœud passe hors ligne, et exécutez depuis une scène les actions déclarées dans le YAML d'un nœud (`api: actions:`).
 - **Résiliente** : un nœud éteint au démarrage de Gladys, ou manqué par le scan, est reconnecté de lui-même ; les emplacements API de chaque nœud sont ménagés.
@@ -78,7 +78,7 @@ sequenceDiagram
 | `valve`         | Ouverte / fermée                                                                                    |
 | `button`        | Appui                                                                                               |
 | `number`        | Valeur modifiable bornée par les `min_value` / `max_value` du YAML                                  |
-| `climate`       | Température de consigne (une seule) + température mesurée                                           |
+| `climate`       | Consigne, température mesurée, marche/arrêt, mode, ventilation, oscillation (climatisation)         |
 | `event`         | Aucune fonctionnalité : le déclencheur de scène « Événement ESPHome »                               |
 
 Les types d'entités sans équivalent dans Gladys (`media_player`, `camera`, `select`, `date`, …) sont écartés de la découverte plutôt que convertis en quelque chose qui ne pourrait pas fonctionner. Un capteur `energy` en kWh ou en Wh est un index cumulé : Gladys en déduit la consommation et son coût.

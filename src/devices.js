@@ -11,7 +11,13 @@
 
 import { createLogger, DEVICE_TRANSPORTS } from '@gladysassistant/integration-sdk';
 import { describeEntity } from './esphome/mapping.js';
-import { readState, writeCommand } from './esphome/convert.js';
+import {
+  readState,
+  writeCommand,
+  withWireDefaults,
+  CLIMATE_CONTROL_KEYS,
+} from './esphome/convert.js';
+import { writeClimateControl } from './esphome/climate.js';
 import {
   EXTERNAL_ID_TYPE,
   MDNS_SERVICE,
@@ -357,6 +363,9 @@ export function buildDevice(gladys, node, entities, info = {}) {
         min: descriptor.min,
         max: descriptor.max,
         ...(descriptor.unit ? { unit: descriptor.unit } : {}),
+        // The values an enum-like feature (an AC mode, a fan speed) accepts on
+        // this unit, out of the whole Gladys enum its min/max cover.
+        ...(descriptor.supportedOptions ? { supported_options: descriptor.supportedOptions } : {}),
       });
     });
   });
@@ -602,6 +611,10 @@ export async function setDeviceValue(gladys, manager, device, feature, value) {
   );
 
   const entity = findEntity(manager, nodeName, entityType, objectId);
+  if (entityType === 'climate' && CLIMATE_CONTROL_KEYS.includes(featureKey)) {
+    await setClimateControl(gladys, manager, { nodeName, entity, feature, featureKey, value });
+    return;
+  }
   const command = writeCommand(
     {
       key: featureKey,
@@ -619,6 +632,47 @@ export async function setDeviceValue(gladys, manager, device, feature, value) {
 
   logger.debug(`ESPHome command ${nodeName}/${entityType}-${objectId}: ${JSON.stringify(command)}`);
   manager.command(nodeName, entityType, objectId, command);
+}
+
+/**
+ * Apply a Gladys value to an air-conditioning feature of a climate. The write
+ * depends on the whole climate state (see climate.js): a unit that is off only
+ * records the mode it will turn on in, and that mode is published right away
+ * since the node will report nothing.
+ * @param {object} gladys - The Gladys SDK instance.
+ * @param {object} manager - The EsphomeManager instance.
+ * @param {object} target - `{ nodeName, entity, feature, featureKey, value }`.
+ * @returns {Promise<void>} Resolves once the command is sent.
+ */
+async function setClimateControl(
+  gladys,
+  manager,
+  { nodeName, entity, feature, featureKey, value },
+) {
+  if (!entity) {
+    throw new Error(`ESPHome node "${nodeName}" is not connected`);
+  }
+  const state = manager.lastStateOf?.(nodeName, entity.id);
+  const write = writeClimateControl(featureKey, Number(value), {
+    entity,
+    state: state && withWireDefaults(state),
+    resumeMode: manager.resumeModeOf?.(nodeName, entity.id),
+  });
+  if (write === null) {
+    throw new Error(`ESPHome: value ${value} is not supported by "${feature.external_id}"`);
+  }
+  if (write.resumeMode !== undefined) {
+    logger.debug(
+      `ESPHome ${nodeName}/${entity.id} is off: it will turn on in mode ${write.resumeMode}`,
+    );
+    manager.setResumeMode(nodeName, entity.id, write.resumeMode);
+    await enqueueStates(gladys, [
+      { device_feature_external_id: feature.external_id, state: Number(value) },
+    ]);
+    return;
+  }
+  logger.debug(`ESPHome command ${nodeName}/${entity.id}: ${JSON.stringify(write.command)}`);
+  manager.command(nodeName, 'climate', entity.objectId, write.command);
 }
 
 /**

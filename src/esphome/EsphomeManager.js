@@ -74,6 +74,16 @@ export class EsphomeManager {
      * @type {Map<string, Map<number, { entity: object, event: object }>>}
      */
     this.lastStates = new Map();
+    /**
+     * Last mode each climate ran in while on, per node: `Map<node,
+     * Map<entityId, mode>>`. ESPHome turns a climate on by sending a mode, so
+     * powering it on from Gladys resumes this one. Indexed by the branded
+     * entity id (stable across reboots, unlike the key), and kept when a
+     * session closes: a configuration change reconnects every node, and the
+     * unit is often off at that moment.
+     * @type {Map<string, Map<string, number>>}
+     */
+    this.resumeModes = new Map();
     /** @type {Function|null} */
     this.stateCallback = null;
     /** @type {Function|null} */
@@ -290,6 +300,11 @@ export class EsphomeManager {
       this.lastStates.set(to, states);
       this.lastStates.delete(from);
     }
+    const modes = this.resumeModes.get(from);
+    if (modes) {
+      this.resumeModes.set(to, modes);
+      this.resumeModes.delete(from);
+    }
     // The callbacks captured the old name in their closure; point them at the
     // real one so later states and lifecycle events carry it.
     this.nodeNames.set(client, realName);
@@ -408,6 +423,51 @@ export class EsphomeManager {
       this.lastStates.set(key, new Map());
     }
     this.lastStates.get(key).set(entity.key, { entity, event });
+    // A climate state without `mode` is OFF (protobuf omits a zero enum).
+    if (entity.type === 'climate' && Number(event.mode) > 0) {
+      this.setResumeMode(key, entity.id, Number(event.mode));
+    }
+  }
+
+  /**
+   * The last state an entity reported, found by its branded id.
+   * @param {string} nodeName - The ESPHome node name.
+   * @param {string} id - The entity id (`${type}-${objectId}`).
+   * @returns {object|undefined} The state event, if one was received.
+   * @example
+   * manager.lastStateOf('salon', 'climate-clim');
+   */
+  lastStateOf(nodeName, id) {
+    return this.lastStatesOf(nodeName).find(({ entity }) => entity.id === id)?.event;
+  }
+
+  /**
+   * The mode a climate turns on in (see `resumeModes`).
+   * @param {string} nodeName - The ESPHome node name.
+   * @param {string} id - The climate entity id.
+   * @returns {number|undefined} The ESPHome mode.
+   * @example
+   * manager.resumeModeOf('salon', 'climate-clim'); // 2
+   */
+  resumeModeOf(nodeName, id) {
+    return this.resumeModes.get(String(nodeName).toLowerCase())?.get(id);
+  }
+
+  /**
+   * Set the mode a climate turns on in.
+   * @param {string} nodeName - The ESPHome node name.
+   * @param {string} id - The climate entity id.
+   * @param {number} mode - The ESPHome mode.
+   * @returns {void}
+   * @example
+   * manager.setResumeMode('salon', 'climate-clim', 3);
+   */
+  setResumeMode(nodeName, id, mode) {
+    const key = String(nodeName).toLowerCase();
+    if (!this.resumeModes.has(key)) {
+      this.resumeModes.set(key, new Map());
+    }
+    this.resumeModes.get(key).set(id, mode);
   }
 
   /**

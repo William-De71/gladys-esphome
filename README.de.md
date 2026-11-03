@@ -16,7 +16,7 @@ Externe [Gladys Assistant](https://gladysassistant.com)-Integration für **ESPHo
 ## Funktionen
 
 - **Automatische Suche**: Gladys schneidet die mDNS-Ankündigungen der Knoten mit; nichts einzugeben, auch wenn sich eine DHCP-Zuweisung ändert.
-- **Alle gängigen Entitäten**: Sensoren, Binärsensoren, Schalter, Lampen, Rollläden, Ventilatoren, Schlösser, Sirenen, Ventile, Taster, Zahlenwerte, Texte und Thermostate (Tabelle unten).
+- **Alle gängigen Entitäten**: Sensoren, Binärsensoren, Schalter, Lampen, Rollläden, Ventilatoren, Schlösser, Sirenen, Ventile, Taster, Zahlenwerte, Texte Thermostate und Klimaanlagen (Tabelle unten).
 - **Echtzeit**: Die Knoten senden ihre Änderungen über eine offen gehaltene Sitzung; nur die geänderten Werte werden an Gladys übermittelt.
 - **Szenen**: Starten Sie eine Szene, wenn ein ESPHome-`event` auslöst (ein Doppelklick, eine Türklingel) oder wenn ein Knoten offline geht, und führen Sie aus einer Szene die in der YAML eines Knotens angegebenen Aktionen (`api: actions:`) aus.
 - **Robust**: Ein Knoten, der beim Start von Gladys ausgeschaltet war oder den die Suche übersehen hat, wird von selbst neu verbunden; die API-Slots jedes Knotens werden geschont.
@@ -78,7 +78,7 @@ sequenceDiagram
 | `valve`         | Offen / geschlossen                                                                              |
 | `button`        | Drücken                                                                                          |
 | `number`        | Beschreibbarer Wert, begrenzt durch `min_value` / `max_value` der YAML                           |
-| `climate`       | Solltemperatur (ein einzelner Sollwert) + aktuelle Temperatur                                    |
+| `climate`       | Sollwert, aktuelle Temperatur, Ein/Aus, Modus, Lüfter, Schwenken (Klimaanlage)                   |
 | `event`         | Keine Funktion: der Szenen-Auslöser „ESPHome-Ereignis“                                           |
 
 Entitätstypen ohne Entsprechung in Gladys (`media_player`, `camera`, `select`, `date`, …) werden bei der Suche ausgelassen, statt auf etwas abgebildet zu werden, das nicht funktionieren könnte. Ein `energy`-Sensor in kWh oder Wh ist ein kumulativer Zählerstand: Gladys leitet daraus den Verbrauch und seine Kosten ab.

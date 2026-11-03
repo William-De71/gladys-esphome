@@ -8,25 +8,36 @@ Esta integración permite controlar sus dispositivos **ESPHome** (ESP32, ESP8266
 
 A diferencia de un aparato comercial, un nodo ESPHome expone exactamente lo que **usted** ha declarado en su archivo YAML. Por eso la integración se adapta a lo que anuncia cada nodo:
 
-| Componente ESPHome | Lo que obtiene en Gladys                                           |
-| ------------------ | ------------------------------------------------------------------ |
-| `sensor`           | Sensor numérico (temperatura, humedad, potencia, batería…)         |
-| `binary_sensor`    | Sensor binario (movimiento, apertura, presencia, fuga, humo…)      |
-| `text_sensor`      | Sensor de texto (solo lectura)                                     |
-| `text`             | Texto editable: enviar un mensaje al nodo (pantalla)               |
-| `switch`           | Interruptor (encendido/apagado)                                    |
-| `light`            | Lámpara: encendido/apagado, brillo, color, temperatura de color    |
-| `cover`            | Persiana o cortina: abrir, cerrar, detener, posición               |
-| `fan`              | Ventilador: encendido/apagado y velocidad                          |
-| `lock`             | Cerradura: bloquear / desbloquear                                  |
-| `siren`            | Sirena: encendida / apagada                                        |
-| `valve`            | Válvula: abierta / cerrada                                         |
-| `button`           | Pulsador                                                           |
-| `number`           | Ajuste numérico editable (control deslizante)                      |
-| `climate`          | Termostato: consigna (una sola) y temperatura medida               |
-| `event`            | Ninguna funcionalidad: el disparador de escena «Evento de ESPHome» |
+| Componente ESPHome | Lo que obtiene en Gladys                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| `sensor`           | Sensor numérico (temperatura, humedad, potencia, batería…)                                             |
+| `binary_sensor`    | Sensor binario (movimiento, apertura, presencia, fuga, humo…)                                          |
+| `text_sensor`      | Sensor de texto (solo lectura)                                                                         |
+| `text`             | Texto editable: enviar un mensaje al nodo (pantalla)                                                   |
+| `switch`           | Interruptor (encendido/apagado)                                                                        |
+| `light`            | Lámpara: encendido/apagado, brillo, color, temperatura de color                                        |
+| `cover`            | Persiana o cortina: abrir, cerrar, detener, posición                                                   |
+| `fan`              | Ventilador: encendido/apagado y velocidad                                                              |
+| `lock`             | Cerradura: bloquear / desbloquear                                                                      |
+| `siren`            | Sirena: encendida / apagada                                                                            |
+| `valve`            | Válvula: abierta / cerrada                                                                             |
+| `button`           | Pulsador                                                                                               |
+| `number`           | Ajuste numérico editable (control deslizante)                                                          |
+| `climate`          | Termostato o aire acondicionado: consigna, temperatura medida, encendido, modo, ventilador, oscilación |
+| `event`            | Ninguna funcionalidad: el disparador de escena «Evento de ESPHome»                                     |
 
 Los tipos que no tienen equivalente en Gladys (`media_player`, `camera`, `select`, `date`…) simplemente se omiten en la búsqueda. Un sensor `energy` (en kWh o Wh) es un índice acumulado: Gladys calcula a partir de él el consumo y su coste.
+
+### Aire acondicionado (`climate`)
+
+Una entidad `climate` conserva su consigna (una sola) y su temperatura medida, y recibe además los controles de la categoría **Aire acondicionado** de Gladys, cada uno solo si el firmware lo declara:
+
+- **Encendido / apagado**: ESPHome no tiene un «encendido» separado, un equipo está encendido en cuanto su modo no es `off`. Encenderlo desde Gladys retoma el último modo usado (o el modo automático si la integración nunca lo vio encendido).
+- **Modo**: automático, frío, calor, deshumidificación, ventilación (`heat_cool` o `auto`, `cool`, `heat`, `dry`, `fan_only` en ESPHome). Solo se proponen los modos de su equipo. Elegir un modo con el equipo apagado no lo enciende: es el modo en el que arrancará.
+- **Velocidad del ventilador**: automática, silenciosa, baja, media, alta (`auto`, `quiet`, `low`, `medium`, `high`, y `middle` como intermedia). Los modos personalizados (`custom_fan_modes`) no se incluyen.
+- **Oscilación vertical** y **horizontal**: un control por eje, el otro eje conserva su ajuste.
+
+Un termostato ya añadido en Gladys conserva sus funciones: para obtener las nuevas, abra el descubrimiento ESPHome y pulse **Actualizar** en el dispositivo.
 
 ### Los estados llegan en tiempo real
 
@@ -65,7 +76,7 @@ Si algunos nodos tienen su propia clave, use el botón **Definir la clave de un 
 
 Estas claves tienen prioridad sobre la clave por defecto.
 
-> El campo **Claves por nodo** de la configuración sigue existiendo, pero es de **una sola línea**: separe los pares `nodo|clave` con un espacio, una coma o un punto y coma. Al ser un campo secreto, parece vacío una vez guardado, y guardarlo de nuevo sustituye todas las claves que contenía. En cuanto use uno de los botones anteriores, las claves escritas en ese campo pasan a los botones y el campo se vacía.
+> El campo **Claves por nodo** de la configuración sigue existiendo, pero es de **una sola línea**: separe los pares `nodo|clave` con un espacio, una coma o un punto y coma. En cada guardado, los pares escritos **se añaden** a las claves ya guardadas y luego el campo se vacía: escribir un nodo nuevo más adelante ya no hace desaparecer los demás. Las comillas copiadas del YAML (`key: "…"`) se eliminan. Para quitar una clave, use **Eliminar la clave de un nodo**.
 >
 > ```
 > salon|kBv1s2f3G4h5J6k7L8m9N0p1Q2r3S4t5U6v7W8x9Y0= cocina|9xQm4Zt6R8s0T2u4V6w8X0y2Z4a6B8c0D2e4F6g8H0=
