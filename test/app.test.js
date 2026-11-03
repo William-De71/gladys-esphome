@@ -346,6 +346,36 @@ test('list_node_keys shows the masked keys, the form field included, and the con
   await app.shutdown();
 });
 
+test('a key typed in the form field adds to the saved ones instead of replacing them', async () => {
+  // Forum 8494: three keys pasted and saved, then a fourth typed and saved —
+  // the secret field comes back empty, so the core stored the fourth alone.
+  const KEY_B = '9xQm4ZtkBv1s2fAbCdEfGhIjKlMnOpQrStUvWxYz0+/=';
+  const { gladys, app } = await start();
+  // The core keeps the variables the form does not send (node_keys).
+  const save = (encryptionKeys) =>
+    gladys.fake.configUpdated({ ...gladys.fake.config, encryption_keys: encryptionKeys });
+  await save(`buandrie|${KEY} garage|${KEY}`);
+  await save(`tableau|${KEY_B}`);
+  assert.deepEqual(JSON.parse(gladys.fake.config.node_keys), {
+    buandrie: KEY,
+    garage: KEY,
+    tableau: KEY_B,
+  });
+  assert.equal(gladys.fake.config.encryption_keys, '');
+  await app.shutdown();
+});
+
+test('a key pasted with its YAML quotes works, a malformed one is pointed out', async () => {
+  const { gladys, manager, app } = await start({
+    config: { encryption_keys: `salon|"${KEY}" garage|BOI` },
+  });
+  assert.equal(manager.usedKeys.at(-1), KEY);
+  const text = (await gladys.fake.action('list_node_keys')).data.message.fr;
+  assert.match(text, /• salon — kBv1…= — connecté/);
+  assert.match(text, /• garage — BOI…I — clé invalide/);
+  await app.shutdown();
+});
+
 test('remove_node_key puts the node back on the default key', async () => {
   const { gladys, manager, app } = await start({
     config: { encryption_key: 'default=', node_keys: JSON.stringify({ salon: KEY }) },

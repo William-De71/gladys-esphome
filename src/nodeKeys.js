@@ -6,9 +6,10 @@
 // alone — what the "Keys per node" secret field cannot do: Gladys never sends
 // a stored secret back to the form, so saving it again replaces every key.
 //
-// A write folds the keys still typed in that field into the registry and
-// empties it, so the two never disagree and a removed key does not come back
-// from the field. Writes are chained: two quick clicks never lose a key.
+// A write, and every save of the form (fold), moves the keys typed in that
+// field into the registry and empties it: the field then ADDS keys instead of
+// replacing them, the two never disagree, and a removed key does not come
+// back from the field. Writes are chained: two quick clicks never lose a key.
 // -----------------------------------------------------------------------------
 
 import {
@@ -17,6 +18,7 @@ import {
   isValidEncryptionKey,
   parseEncryptionKeys,
   parseNodeKeys,
+  unquote,
 } from './config.js';
 
 export class NodeKeyError extends Error {
@@ -93,12 +95,23 @@ export function createNodeKeys(gladys) {
       if (!isValidEncryptionKey(key)) {
         throw new NodeKeyError('invalid_key');
       }
-      const value = key.trim();
+      const value = unquote(key);
       await update((keys) => {
         keys[name] = value;
         return true;
       });
       return name;
+    },
+
+    /**
+     * Move the keys typed in the "Keys per node" field into the registry and
+     * empty the field. Run on every save of the form: the field never shows
+     * what it holds, so the next save would otherwise replace every key with
+     * the one just typed — it now ADDS that key to the others.
+     * @returns {Promise<boolean>} Whether keys were moved.
+     */
+    fold() {
+      return update(() => false);
     },
 
     /**

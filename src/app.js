@@ -15,7 +15,12 @@
 import { createLogger } from '@gladysassistant/integration-sdk';
 import { EsphomeManager } from './esphome/EsphomeManager.js';
 import { parseActionArguments } from './esphome/actions.js';
-import { normalizeConfig, normalizeNodeName, resolveEncryptionKey } from './config.js';
+import {
+  normalizeConfig,
+  normalizeNodeName,
+  resolveEncryptionKey,
+  isValidEncryptionKey,
+} from './config.js';
 import { createNodeKeys, NodeKeyError, maskKey } from './nodeKeys.js';
 import {
   buildDiscoveredDevices,
@@ -375,14 +380,32 @@ export function createApp(gladys, options = {}) {
       .map((node) => ({
         node,
         key: maskKey(config.encryption_keys[node]),
+        valid: isValidEncryptionKey(config.encryption_keys[node]),
         connected: Boolean(connectedNodeOf(node)),
       }));
     return nodeKeysList(entries, Boolean(config.encryption_key));
   });
 
+  /**
+   * Move the keys typed in the "Keys per node" field into the registry, so the
+   * next save of that field adds to them (see nodeKeys.fold). A failure only
+   * leaves them in the field, where they still work.
+   * @returns {Promise<void>} Resolves once done.
+   */
+  async function foldNodeKeys() {
+    try {
+      if (await nodeKeys.fold()) {
+        logger.info('Keys per node: the keys typed in the field joined the saved ones');
+      }
+    } catch (e) {
+      logger.warn(`Saving the keys typed in the field failed: ${e.message}`);
+    }
+  }
+
   // --- Configuration updated by the user -------------------------------------
   gladys.onConfigUpdated(async () => {
     logger.info('onConfigUpdated -> reconnecting with the new configuration');
+    await foldNodeKeys();
     // An encryption key that changed invalidates every open session: drop them
     // all rather than guess which ones are still valid.
     await manager.disconnectAll();
@@ -396,6 +419,8 @@ export function createApp(gladys, options = {}) {
       // — and so discovery can reuse their stored addresses when a scan comes
       // up empty (see knownNodes).
       await gladys.getDevices();
+      // Keys a 1.3.1 form save left in the field join the registry too.
+      await foldNodeKeys();
       await publishDevices();
       startReconnectWatchdog();
     } catch (err) {

@@ -193,7 +193,7 @@ export function nodeKeySaveFailed(reason) {
 
 /**
  * Result of the "list the node keys" action.
- * @param {Array<{ node: string, key: string, connected: boolean }>} entries - The
+ * @param {Array<{ node: string, key: string, valid?: boolean, connected: boolean }>} entries - The
  * nodes with a specific key, their key already masked.
  * @param {boolean} hasDefault - Whether a default key is set.
  * @returns {object} The message, in the four languages.
@@ -206,6 +206,7 @@ export function nodeKeysList(entries, hasDefault) {
       none: 'No node has a specific key.',
       on: 'connected',
       off: 'not connected',
+      invalid: 'invalid key (44 base64 characters ending with "=" expected)',
       title: 'Nodes with a specific key:',
       def: hasDefault
         ? 'The other nodes use the default key.'
@@ -215,6 +216,7 @@ export function nodeKeysList(entries, hasDefault) {
       none: "Aucun nœud n'a de clé spécifique.",
       on: 'connecté',
       off: 'non connecté',
+      invalid: 'clé invalide (44 caractères base64 finissant par « = » attendus)',
       title: 'Nœuds avec une clé spécifique :',
       def: hasDefault
         ? 'Les autres nœuds utilisent la clé par défaut.'
@@ -224,6 +226,7 @@ export function nodeKeysList(entries, hasDefault) {
       none: 'Kein Knoten hat einen eigenen Schlüssel.',
       on: 'verbunden',
       off: 'nicht verbunden',
+      invalid: 'ungültiger Schlüssel (44 Base64-Zeichen mit „=“ am Ende erwartet)',
       title: 'Knoten mit eigenem Schlüssel:',
       def: hasDefault
         ? 'Die anderen Knoten verwenden den Standardschlüssel.'
@@ -233,6 +236,7 @@ export function nodeKeysList(entries, hasDefault) {
       none: 'Ningún nodo tiene clave específica.',
       on: 'conectado',
       off: 'no conectado',
+      invalid: 'clave no válida (se esperan 44 caracteres base64 terminados en «=»)',
       title: 'Nodos con una clave específica:',
       def: hasDefault
         ? 'Los demás nodos usan la clave por defecto.'
@@ -242,7 +246,8 @@ export function nodeKeysList(entries, hasDefault) {
   const message = {};
   for (const [language, text] of Object.entries(texts)) {
     const lines = entries.map(
-      ({ node, key, connected }) => `• ${node} — ${key} — ${connected ? text.on : text.off}`,
+      ({ node, key, valid = true, connected }) =>
+        `• ${node} — ${key} — ${valid ? '' : `${text.invalid} — `}${connected ? text.on : text.off}`,
     );
     message[language] = [entries.length ? text.title : text.none, ...lines, text.def].join('\n');
   }

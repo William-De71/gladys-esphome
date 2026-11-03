@@ -44,6 +44,23 @@ const ENCRYPTION_KEY = /^[A-Za-z0-9+/]{43}=$/;
 // or ";": those separate the entries of the free-text fields.
 const NODE_NAME = /^[a-z0-9_.:[\]-]{1,253}$/i;
 
+// Quotes a key is often pasted with, straight from the YAML (`key: "…="`) or
+// through a word processor or a forum that curls them.
+const QUOTES = /^["'`«»“”‘’„\s]+|["'`«»“”‘’„\s]+$/g;
+
+/**
+ * Strip the quotes a key or a node name was pasted with. A quoted key fails
+ * the handshake with nothing in the logs but "invalid key", and a base64 key
+ * never contains a quote.
+ * @param {unknown} raw - The pasted text.
+ * @returns {string} The text without surrounding quotes or spaces.
+ * @example
+ * unquote('"kBv1…="'); // 'kBv1…='
+ */
+export function unquote(raw) {
+  return String(raw ?? '').replace(QUOTES, '');
+}
+
 /**
  * Split a free-text field into trimmed, non-empty entries. Users paste from a
  * YAML file or a terminal, and the single-line input of Gladys mangles the
@@ -70,9 +87,7 @@ function splitEntries(raw) {
  * normalizeNodeName(' Salon '); // 'salon'
  */
 export function normalizeNodeName(raw) {
-  const name = String(raw ?? '')
-    .trim()
-    .toLowerCase();
+  const name = unquote(raw).toLowerCase();
   return NODE_NAME.test(name) ? name : null;
 }
 
@@ -84,7 +99,7 @@ export function normalizeNodeName(raw) {
  * isValidEncryptionKey('kBv1s2f...='); // false, too short
  */
 export function isValidEncryptionKey(raw) {
-  return typeof raw === 'string' && ENCRYPTION_KEY.test(raw.trim());
+  return typeof raw === 'string' && ENCRYPTION_KEY.test(unquote(raw));
 }
 
 /**
@@ -105,8 +120,8 @@ export function parseEncryptionKeys(raw) {
     if (separator <= 0) {
       return;
     }
-    const node = line.slice(0, separator).trim().toLowerCase();
-    const key = line.slice(separator + 1).trim();
+    const node = unquote(line.slice(0, separator)).toLowerCase();
+    const key = unquote(line.slice(separator + 1));
     if (node && key) {
       keys[node] = key;
     }
@@ -137,8 +152,8 @@ export function parseNodeKeys(stored) {
   const keys = {};
   Object.entries(value).forEach(([node, key]) => {
     const name = normalizeNodeName(node);
-    if (name && typeof key === 'string' && key.trim()) {
-      keys[name] = key.trim();
+    if (name && typeof key === 'string' && unquote(key)) {
+      keys[name] = unquote(key);
     }
   });
   return keys;
@@ -190,7 +205,7 @@ export function normalizeConfig(raw = {}) {
     scan_duration: Number(raw.scan_duration ?? DEFAULT_CONFIG.scan_duration),
     connection_timeout: Number(raw.connection_timeout ?? DEFAULT_CONFIG.connection_timeout),
     // Default key, applied to every node without a specific one.
-    encryption_key: typeof raw.encryption_key === 'string' ? raw.encryption_key.trim() : '',
+    encryption_key: typeof raw.encryption_key === 'string' ? unquote(raw.encryption_key) : '',
     // The registry first, then the form field: what the user just typed in the
     // form wins, and the buttons fold the field into the registry anyway.
     encryption_keys: {
