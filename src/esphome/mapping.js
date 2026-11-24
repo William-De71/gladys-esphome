@@ -581,8 +581,9 @@ function describeLight(entity) {
   ];
 
   const modes = Array.isArray(entity.supportedColorModes) ? entity.supportedColorModes : [];
-  // ColorMode is a bitfield: BRIGHTNESS is bit 1, RGB bit 4, COLOR_TEMPERATURE
-  // bit 6. Any mode above the plain ON_OFF (1) carries brightness.
+  // ColorMode is a bitfield: BRIGHTNESS is bit 1, COLOR_TEMPERATURE bit 3,
+  // COLD_WARM_WHITE bit 4, RGB bit 5. Any mode above the plain ON_OFF (1)
+  // carries brightness.
   const supports = (bit) => modes.some((mode) => (mode & bit) === bit);
 
   if (supports(BRIGHTNESS_BIT)) {
@@ -611,7 +612,7 @@ function describeLight(entity) {
     });
   }
 
-  if (supports(COLOR_TEMPERATURE_BIT)) {
+  if (supports(COLOR_TEMPERATURE_BIT) || supportsColdWarmWhiteTemperature(entity, supports)) {
     features.push({
       key: 'temperature',
       readOnly: false,
@@ -634,7 +635,25 @@ function describeLight(entity) {
 // declaring RGB_COLOR_TEMPERATURE (0b101111) match both color and temperature.
 const BRIGHTNESS_BIT = 0b000010;
 const COLOR_TEMPERATURE_BIT = 0b001000;
+const COLD_WARM_WHITE_BIT = 0b010000;
 const RGB_BIT = 0b100000;
+
+/**
+ * Whether a cold/warm white light (`cwww`, `rgbww`: COLD_WARM_WHITE (19) and
+ * RGB_COLD_WARM_WHITE (51)) can be driven by a color temperature. Those modes
+ * carry the COLD_WARM_WHITE bit, not COLOR_TEMPERATURE, yet the firmware mixes
+ * the two channels itself from a `color_temperature` (LightCall, as Home
+ * Assistant drives them) — provided the YAML declares
+ * `cold_white_color_temperature` and `warm_white_color_temperature`. Without
+ * them the node reports no mired range and ignores the temperature, so no
+ * slider is offered.
+ * @param {object} entity - The ESPHome light entity.
+ * @param {(bit: number) => boolean} supports - Tests a capability bit.
+ * @returns {boolean} True when a temperature feature makes sense.
+ */
+function supportsColdWarmWhiteTemperature(entity, supports) {
+  return supports(COLD_WARM_WHITE_BIT) && entity.minMireds > 0 && entity.maxMireds > 0;
+}
 
 /**
  * Features of an ESPHome `cover`: a state (open/close/stop) and, when the

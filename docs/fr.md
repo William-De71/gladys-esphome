@@ -28,6 +28,13 @@ Contrairement à un appareil du commerce, un nœud ESPHome expose exactement ce 
 
 Les types qui n'ont pas d'équivalent dans Gladys (`media_player`, `camera`, `select`, `date`...) sont simplement ignorés lors de la découverte. Un capteur `energy` (en kWh ou en Wh) est un index cumulé : Gladys en calcule la consommation et son coût.
 
+### Lumières, volets, capteurs d'ouverture et de serrure
+
+- **Lumières blanc froid / blanc chaud** (`cwww`, `rgbww`) : elles reçoivent un réglage de température de couleur quand le YAML déclare `cold_white_color_temperature` et `warm_white_color_temperature`. ESPHome mélange alors lui-même les deux canaux blancs. Une lumière déjà ajoutée dans Gladys obtient ce réglage après un clic sur **Mettre à jour** sur l'appareil, dans la découverte ESPHome.
+- **Capteurs de porte et de fenêtre** (`door`, `window`, `opening`, `garage_door`) : ESPHome envoie `ON` quand c'est ouvert, Gladys affiche ouvert et fermé de la même façon, et ses scènes et conditions « ouvert » correspondent à une porte ouverte.
+- **Capteurs binaires `lock`** : ESPHome envoie `ON` quand c'est déverrouillé, Gladys affiche « Déverrouillé ».
+- **Volets** : Gladys affiche ouvert, fermé, ou arrêté (volet arrêté à mi-course). Pendant le mouvement, c'est le sens qui est affiché.
+
 ### Climatisation (`climate`)
 
 Une entité `climate` garde sa consigne (une seule) et sa température mesurée, et reçoit en plus les commandes de la catégorie **Climatisation** de Gladys, chacune seulement si le firmware la déclare :

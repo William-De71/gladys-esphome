@@ -28,6 +28,13 @@ Anders als ein Gerät von der Stange stellt ein ESPHome-Knoten genau das bereit,
 
 Typen ohne Entsprechung in Gladys (`media_player`, `camera`, `select`, `date`, …) werden bei der Suche einfach ausgelassen. Ein `energy`-Sensor (in kWh oder Wh) ist ein kumulativer Zählerstand: Gladys berechnet daraus den Verbrauch und seine Kosten.
 
+### Lampen, Rollläden, Tür- und Schlosssensoren
+
+- **Kalt-/Warmweiß-Lampen** (`cwww`, `rgbww`): Sie erhalten eine Farbtemperatur-Steuerung, wenn die YAML `cold_white_color_temperature` und `warm_white_color_temperature` angibt. ESPHome mischt die beiden Weißkanäle dann selbst. Eine bereits in Gladys hinzugefügte Lampe erhält diese Steuerung nach einem Klick auf **Aktualisieren** beim Gerät in der ESPHome-Erkennung.
+- **Tür- und Fenstersensoren** (`door`, `window`, `opening`, `garage_door`): ESPHome meldet `ON`, wenn offen, Gladys zeigt offen und geschlossen genauso an, und seine „offen“-Szenen und -Bedingungen passen zu einer offenen Tür.
+- **`lock`-Binärsensoren**: ESPHome meldet `ON`, wenn entriegelt, Gladys zeigt „Entriegelt“ an.
+- **Rollläden**: Gladys zeigt offen, geschlossen oder gestoppt (auf halbem Weg angehalten). Während der Bewegung wird die Richtung angezeigt.
+
 ### Klimaanlage (`climate`)
 
 Eine `climate`-Entität behält ihren Sollwert (einen einzigen) und ihre gemessene Temperatur und erhält zusätzlich die Steuerungen der Gladys-Kategorie **Klimaanlage**, jede nur, wenn die Firmware sie meldet:

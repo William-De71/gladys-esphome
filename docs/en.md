@@ -28,6 +28,13 @@ Unlike an off-the-shelf device, an ESPHome node exposes exactly what **you** dec
 
 Types Gladys has no equivalent for (`media_player`, `camera`, `select`, `date`…) are simply left out of discovery. An `energy` sensor (in kWh or Wh) is a cumulative index: Gladys computes the consumption and its cost from it.
 
+### Lights, covers, door and lock sensors
+
+- **Cold/warm white lights** (`cwww`, `rgbww`): they get a color temperature control when the YAML declares `cold_white_color_temperature` and `warm_white_color_temperature`. ESPHome then mixes both white channels itself. A light already added to Gladys gets this control after clicking **Update** on the device in the ESPHome discovery.
+- **Door and window sensors** (`door`, `window`, `opening`, `garage_door`): ESPHome reports `ON` when open, Gladys shows open and closed the same way, and its "open" scenes and conditions match an open door.
+- **`lock` binary sensors**: ESPHome reports `ON` when unlocked, Gladys shows "Unlocked".
+- **Covers**: Gladys shows open, closed, or stopped (a cover stopped part way). While it moves, its direction is shown.
+
 ### Air conditioning (`climate`)
 
 A `climate` entity keeps its setpoint (a single one) and its measured temperature, and also gets the controls of the Gladys **Air conditioning** category, each one only when the firmware declares it:

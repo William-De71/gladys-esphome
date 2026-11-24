@@ -28,6 +28,13 @@ A diferencia de un aparato comercial, un nodo ESPHome expone exactamente lo que 
 
 Los tipos que no tienen equivalente en Gladys (`media_player`, `camera`, `select`, `date`…) simplemente se omiten en la búsqueda. Un sensor `energy` (en kWh o Wh) es un índice acumulado: Gladys calcula a partir de él el consumo y su coste.
 
+### Luces, persianas, sensores de apertura y de cerradura
+
+- **Luces blanco frío / blanco cálido** (`cwww`, `rgbww`): reciben un control de temperatura de color cuando el YAML declara `cold_white_color_temperature` y `warm_white_color_temperature`. ESPHome mezcla entonces los dos canales blancos por sí mismo. Una luz ya añadida en Gladys obtiene este control tras pulsar **Actualizar** en el dispositivo, en el descubrimiento ESPHome.
+- **Sensores de puerta y ventana** (`door`, `window`, `opening`, `garage_door`): ESPHome envía `ON` cuando está abierto, Gladys muestra abierto y cerrado de la misma forma, y sus escenas y condiciones «abierto» corresponden a una puerta abierta.
+- **Sensores binarios `lock`**: ESPHome envía `ON` cuando está desbloqueado, Gladys muestra «Desbloqueado».
+- **Persianas**: Gladys muestra abierta, cerrada o detenida (parada a medio recorrido). Durante el movimiento se muestra la dirección.
+
 ### Aire acondicionado (`climate`)
 
 Una entidad `climate` conserva su consigna (una sola) y su temperatura medida, y recibe además los controles de la categoría **Aire acondicionado** de Gladys, cada uno solo si el firmware lo declara:

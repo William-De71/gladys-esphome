@@ -120,6 +120,38 @@ test('a light only gets the features its firmware declares as supported', () => 
   );
 });
 
+test('a cold/warm white light gets a color temperature when its YAML gives the range', () => {
+  // ESPHome api.proto: COLD_WARM_WHITE (19 = 0b010011) and RGB_COLD_WARM_WHITE
+  // (51 = 0b110011) carry the COLD_WARM_WHITE bit (0b010000), not
+  // COLOR_TEMPERATURE (0b001000). The firmware still mixes both channels from a
+  // color_temperature when cold_white_color_temperature and
+  // warm_white_color_temperature are set, which reports a mired range.
+  // Gladys: light/temperature, in mireds as ESPHome speaks them.
+  const range = { minMireds: 153, maxMireds: 370 };
+  const cwww = describeEntity({ type: 'light', supportedColorModes: [19], ...range });
+  assert.deepEqual(
+    cwww.map((f) => f.key),
+    ['state', 'brightness', 'temperature'],
+  );
+  const temperature = cwww.find((f) => f.key === 'temperature');
+  assert.equal(temperature.type, DEVICE_FEATURE_TYPES.LIGHT.TEMPERATURE);
+  assert.equal(temperature.min, 153);
+  assert.equal(temperature.max, 370);
+
+  const rgbww = describeEntity({ type: 'light', supportedColorModes: [35, 51], ...range });
+  assert.deepEqual(
+    rgbww.map((f) => f.key),
+    ['state', 'brightness', 'color', 'temperature'],
+  );
+
+  // No range declared: the node ignores a temperature, so no slider.
+  const bare = describeEntity({ type: 'light', supportedColorModes: [19] });
+  assert.deepEqual(
+    bare.map((f) => f.key),
+    ['state', 'brightness'],
+  );
+});
+
 test('a cover only gets a position slider when it supports positioning', () => {
   assert.deepEqual(
     describeEntity({ type: 'cover' }).map((f) => f.key),
