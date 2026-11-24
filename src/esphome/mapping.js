@@ -659,7 +659,10 @@ function describeCover(entity) {
       keepHistory: true,
       category,
       type: types.STATE,
-      // Gladys shutter states: -1 closing, 0 stop, 1 opening, 2 open, 3 closed.
+      // Gladys shutter states: -1 close, 0 stop, 1 open (COVER_STATE in
+      // convert.js). The bounds stay at -1..3 because they are a forever field
+      // since 1.0: versions before 1.5 also published 2 and 3, which Gladys
+      // never knew, and -1..1 fits inside.
       min: -1,
       max: 3,
     },

@@ -36,13 +36,31 @@ export const CLIMATE_CONTROL_KEYS = [
   'swing_horizontal',
 ];
 
-// Gladys shutter/curtain state values (server/utils/constants.js).
+// The Gladys conventions below are not exported by the SDK; they are copied
+// from the core (server/utils/constants.js) and are what the front, the chips
+// and the scene conditions compare states against. Several of them run the
+// other way round from ESPHome, which is the whole point of naming them.
+
+// Gladys shutter/curtain state: COVER_STATE. Only three values exist — the
+// shutter buttons, their labels and the scene conditions know nothing else.
 export const COVER_STATE = {
-  CLOSING: -1,
   STOP: 0,
-  OPENING: 1,
-  OPEN: 2,
-  CLOSED: 3,
+  OPEN: 1,
+  CLOSE: -1,
+};
+
+// Gladys opening sensor: OPENING_SENSOR_STATE. 1 is CLOSED (a contact that is
+// made), the reverse of ESPHome and Home Assistant, where ON means open.
+export const OPENING_SENSOR_STATE = {
+  OPEN: 0,
+  CLOSE: 1,
+};
+
+// Gladys lock: LOCK.STATE. 1 is LOCKED, the reverse of an ESPHome `lock`
+// binary_sensor, where ON means unlocked (open).
+export const GLADYS_LOCK_STATE = {
+  UNLOCKED: 0,
+  LOCKED: 1,
 };
 
 // ESPHome CoverOperation enum (esphome/components/cover/cover.h).
@@ -246,15 +264,28 @@ function readMainState(feature, event) {
     return readCoverState(event);
   }
 
+  if (feature.category === DEVICE_FEATURE_CATEGORIES.OPENING_SENSOR) {
+    // ESPHome (door, window, opening, garage_door): ON means open.
+    // Gladys: 1 means closed. Publishing the boolean as is showed an open
+    // window as closed and ran "on door open" scenes on close.
+    return event.state ? OPENING_SENSOR_STATE.OPEN : OPENING_SENSOR_STATE.CLOSE;
+  }
+
+  if (feature.category === DEVICE_FEATURE_CATEGORIES.LOCK && event.type === 'binary_sensor') {
+    // A `lock` binary_sensor is a boolean, not the LockState enum below.
+    // ESPHome: ON means unlocked. Gladys: 1 means locked.
+    return event.state ? GLADYS_LOCK_STATE.UNLOCKED : GLADYS_LOCK_STATE.LOCKED;
+  }
+
   if (feature.category === DEVICE_FEATURE_CATEGORIES.LOCK) {
     // Only the two resting states have a Gladys value. JAMMED, LOCKING, OPEN…
     // are neither, and reading them as "unlocked" would tell a scene the door
     // is open while the bolt is still moving — or stuck.
     const lockState = Number(event.state);
     if (lockState === LOCK_STATE.LOCKED) {
-      return 1;
+      return GLADYS_LOCK_STATE.LOCKED;
     }
-    return lockState === LOCK_STATE.UNLOCKED ? 0 : undefined;
+    return lockState === LOCK_STATE.UNLOCKED ? GLADYS_LOCK_STATE.UNLOCKED : undefined;
   }
 
   if (event.type === 'valve') {
@@ -291,38 +322,38 @@ function readMainState(feature, event) {
 /**
  * Translate an ESPHome cover state into the Gladys shutter state. ESPHome
  * reports the MOVEMENT (`currentOperation`) and the position separately, while
- * Gladys expects a single value covering both, so a resting cover is resolved
- * through its position.
+ * Gladys expects one of three values (open, close, stop) covering both.
  * @param {object} rawEvent - The ESPHome cover state event.
  * @returns {number|undefined} The Gladys shutter state.
  * @example
- * readCoverState({ currentOperation: 1 }); // 1 (opening)
+ * readCoverState({ currentOperation: 1 }); // 1 (open)
  */
 export function readCoverState(rawEvent) {
   // Called on its own (tests, callers outside readState) the event may still
   // lack its defaults: IDLE and position 0 are exactly the absent values.
   const event = withWireDefaults(rawEvent);
+  // Moving: the direction is the command the cover is carrying out, which is
+  // what the Gladys shutter buttons highlight.
   if (event.currentOperation === COVER_OPERATION.IS_OPENING) {
-    return COVER_STATE.OPENING;
+    return COVER_STATE.OPEN;
   }
   if (event.currentOperation === COVER_OPERATION.IS_CLOSING) {
-    return COVER_STATE.CLOSING;
+    return COVER_STATE.CLOSE;
   }
   if (event.position === undefined) {
     return undefined;
   }
-  // Idle: the position tells whether it ended up open or closed. ESPHome's
-  // convention is 1 = fully open, 0 = fully closed.
+  // Idle: the position tells where it ended up. ESPHome's convention is
+  // 1 = fully open, 0 = fully closed.
   const position = Number(event.position);
   if (position <= 0) {
-    return COVER_STATE.CLOSED;
+    return COVER_STATE.CLOSE;
   }
   if (position >= 1) {
     return COVER_STATE.OPEN;
   }
-  // Partially open and not moving: Gladys has no "half-open" state, and OPEN is
-  // the truthful one — the cover does let light through.
-  return COVER_STATE.OPEN;
+  // Stopped part way: neither open nor closed, which Gladys calls STOP.
+  return COVER_STATE.STOP;
 }
 
 /**
@@ -403,11 +434,9 @@ function writeMainState(feature, value) {
   ) {
     // ESPHome drives a cover by target position, with an explicit stop flag.
     switch (value) {
-      case COVER_STATE.OPENING:
       case COVER_STATE.OPEN:
         return { position: 1 };
-      case COVER_STATE.CLOSING:
-      case COVER_STATE.CLOSED:
+      case COVER_STATE.CLOSE:
         return { position: 0 };
       case COVER_STATE.STOP:
         return { stop: true };
@@ -417,7 +446,9 @@ function writeMainState(feature, value) {
   }
 
   if (feature.category === DEVICE_FEATURE_CATEGORIES.LOCK) {
-    return { command: value === 1 ? LOCK_COMMAND.LOCK : LOCK_COMMAND.UNLOCK };
+    return {
+      command: value === GLADYS_LOCK_STATE.LOCKED ? LOCK_COMMAND.LOCK : LOCK_COMMAND.UNLOCK,
+    };
   }
 
   if (feature.entityType === 'valve') {

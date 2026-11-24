@@ -11,7 +11,10 @@ import {
   percentToRatio,
   withWireDefaults,
   COVER_STATE,
+  OPENING_SENSOR_STATE,
+  GLADYS_LOCK_STATE,
 } from '../src/esphome/convert.js';
+import { describeEntity } from '../src/esphome/mapping.js';
 
 test('a boolean state becomes the 0/1 Gladys stores', () => {
   assert.equal(
@@ -60,7 +63,7 @@ test('protobuf leaves out every field holding its default, for every entity type
   assert.equal(readState(power, { type: 'sensor', key: 7 }), 0);
 
   const cover = { key: 'state', category: DEVICE_FEATURE_CATEGORIES.SHUTTER };
-  assert.equal(readState(cover, { type: 'cover', key: 8 }), COVER_STATE.CLOSED);
+  assert.equal(readState(cover, { type: 'cover', key: 8 }), COVER_STATE.CLOSE);
   assert.equal(readState({ key: 'position' }, { type: 'cover', key: 8 }), 0);
 
   // A pure blue light: red = 0 travels as an absent field.
@@ -157,15 +160,70 @@ test('a color survives the round trip through the packed Gladys integer', () => 
   assert.equal(packColor(components.red, components.green, components.blue), packed);
 });
 
-test('a moving cover reports its direction, a resting one its position', () => {
-  assert.equal(readCoverState({ currentOperation: 1 }), COVER_STATE.OPENING);
-  assert.equal(readCoverState({ currentOperation: 2 }), COVER_STATE.CLOSING);
-  assert.equal(readCoverState({ currentOperation: 0, position: 0 }), COVER_STATE.CLOSED);
-  assert.equal(readCoverState({ currentOperation: 0, position: 1 }), COVER_STATE.OPEN);
+test('a cover only publishes the three states Gladys knows: -1 close, 0 stop, 1 open', () => {
+  // Gladys (server/utils/constants.js): COVER_STATE = { STOP: 0, OPEN: 1, CLOSE: -1 }.
+  // The shutter buttons, their labels and the scene conditions know nothing
+  // else: the 2 (open) and 3 (closed) published before left no button lit once
+  // the cover stopped, and a "cover is open" condition never matched.
+  assert.deepEqual(COVER_STATE, { STOP: 0, OPEN: 1, CLOSE: -1 });
+
+  // ESPHome CoverOperation: 1 IS_OPENING, 2 IS_CLOSING -> the direction.
+  assert.equal(readCoverState({ currentOperation: 1 }), 1);
+  assert.equal(readCoverState({ currentOperation: 2 }), -1);
+  // ESPHome position at rest: 1 fully open, 0 fully closed, in between stopped.
+  assert.equal(readCoverState({ currentOperation: 0, position: 1 }), 1);
+  assert.equal(readCoverState({ currentOperation: 0, position: 0 }), -1);
+  assert.equal(readCoverState({ currentOperation: 0, position: 0.4 }), 0);
+  // Every value fits the -1..3 bounds the feature has declared since 1.0.
+  const [feature] = describeEntity({ type: 'cover' });
+  for (const value of [-1, 0, 1]) {
+    assert.ok(value >= feature.min && value <= feature.max);
+  }
 });
 
 test('a resting cover with no position field is closed: 0 is the absent value', () => {
-  assert.equal(readCoverState({ type: 'cover', currentOperation: 0 }), COVER_STATE.CLOSED);
+  assert.equal(readCoverState({ type: 'cover', currentOperation: 0 }), COVER_STATE.CLOSE);
+});
+
+test('a door or window sensor: ESPHome ON (open) is Gladys 0 (open)', () => {
+  // ESPHome and Home Assistant (door, window, opening, garage_door): ON = open.
+  // Gladys (server/utils/constants.js): OPENING_SENSOR_STATE = { OPEN: 0, CLOSE: 1 }.
+  // Publishing the boolean as is showed an open window as closed, counted the
+  // "open windows" chip the other way round and ran "on open" scenes on close.
+  assert.deepEqual(OPENING_SENSOR_STATE, { OPEN: 0, CLOSE: 1 });
+  for (const deviceClass of ['door', 'window', 'opening', 'garage_door']) {
+    const [feature] = describeEntity({ type: 'binary_sensor', deviceClass });
+    assert.equal(feature.category, DEVICE_FEATURE_CATEGORIES.OPENING_SENSOR);
+    const open = { type: 'binary_sensor', key: 1, state: true };
+    const closed = { type: 'binary_sensor', key: 1, state: false };
+    assert.equal(readState(feature, open), OPENING_SENSOR_STATE.OPEN, deviceClass);
+    assert.equal(readState(feature, closed), OPENING_SENSOR_STATE.CLOSE, deviceClass);
+    // Closed travels as an absent field (protobuf default), still closed.
+    assert.equal(readState(feature, { type: 'binary_sensor', key: 1 }), 1, deviceClass);
+    assert.equal(readState(feature, { ...open, missingState: true }), undefined, deviceClass);
+  }
+});
+
+test('a lock binary_sensor: ESPHome ON (unlocked) is Gladys 0 (unlocked)', () => {
+  // ESPHome and Home Assistant (binary_sensor, device_class lock): ON = unlocked.
+  // Gladys (server/utils/constants.js): LOCK.STATE = { UNLOCKED: 0, LOCKED: 1 }.
+  // Read as the LockState enum of a `lock` entity, ON showed "locked" and OFF
+  // (locked) was never published at all.
+  assert.deepEqual(GLADYS_LOCK_STATE, { UNLOCKED: 0, LOCKED: 1 });
+  const [feature] = describeEntity({ type: 'binary_sensor', deviceClass: 'lock' });
+  assert.equal(feature.category, DEVICE_FEATURE_CATEGORIES.LOCK);
+  const unlocked = { type: 'binary_sensor', key: 2, state: true };
+  assert.equal(readState(feature, unlocked), GLADYS_LOCK_STATE.UNLOCKED);
+  assert.equal(readState(feature, { ...unlocked, state: false }), GLADYS_LOCK_STATE.LOCKED);
+  assert.equal(readState(feature, { type: 'binary_sensor', key: 2 }), GLADYS_LOCK_STATE.LOCKED);
+});
+
+test('a lock entity keeps reading the ESPHome LockState enum', () => {
+  // ESPHome LockState: 1 LOCKED, 2 UNLOCKED (not a boolean): the binary_sensor
+  // inversion above must not reach it.
+  const [feature] = describeEntity({ type: 'lock' });
+  assert.equal(readState(feature, { type: 'lock', state: 1 }), GLADYS_LOCK_STATE.LOCKED);
+  assert.equal(readState(feature, { type: 'lock', state: 2 }), GLADYS_LOCK_STATE.UNLOCKED);
 });
 
 test('setting a brightness turns the light on, so the slider does something', () => {
@@ -175,9 +233,11 @@ test('setting a brightness turns the light on, so the slider does something', ()
 
 test('a cover command becomes the target position ESPHome expects', () => {
   const cover = { key: 'state', category: DEVICE_FEATURE_CATEGORIES.SHUTTER };
-  assert.deepEqual(writeCommand(cover, COVER_STATE.OPENING), { position: 1 });
-  assert.deepEqual(writeCommand(cover, COVER_STATE.CLOSED), { position: 0 });
+  // Gladys 1 open, -1 close, 0 stop -> ESPHome target position 1 / 0, or stop.
+  assert.deepEqual(writeCommand(cover, COVER_STATE.OPEN), { position: 1 });
+  assert.deepEqual(writeCommand(cover, COVER_STATE.CLOSE), { position: 0 });
   assert.deepEqual(writeCommand(cover, COVER_STATE.STOP), { stop: true });
+  assert.equal(writeCommand(cover, 3), null);
 });
 
 test('a lock command uses the ESPHome LockCommand enum, not a boolean', () => {
