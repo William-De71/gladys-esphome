@@ -254,7 +254,15 @@ function readMainState(feature, event) {
 
   if (feature.category === DEVICE_FEATURE_CATEGORIES.TEXT) {
     // Gladys stores text states through a dedicated `{ text }` shape.
-    return event.state === undefined ? undefined : { text: String(event.state) };
+    if (event.state === undefined) {
+      return undefined;
+    }
+    // A select with no option chosen arrives as '' (protobuf default); it is
+    // no option of the list, so there is nothing to show.
+    if (event.type === 'select' && event.state === '') {
+      return undefined;
+    }
+    return { text: String(event.state) };
   }
 
   if (

@@ -23,10 +23,11 @@ A diferencia de un aparato comercial, un nodo ESPHome expone exactamente lo que 
 | `valve`            | Válvula: abierta / cerrada                                                                             |
 | `button`           | Pulsador                                                                                               |
 | `number`           | Ajuste numérico editable (control deslizante)                                                          |
+| `select`           | Lista de opciones declarada en el YAML (`options:`): elegir una                                        |
 | `climate`          | Termostato o aire acondicionado: consigna, temperatura medida, encendido, modo, ventilador, oscilación |
 | `event`            | Ninguna funcionalidad: el disparador de escena «Evento de ESPHome»                                     |
 
-Los tipos que no tienen equivalente en Gladys (`media_player`, `camera`, `select`, `date`…) simplemente se omiten en la búsqueda. Un sensor `energy` (en kWh o Wh) es un índice acumulado: Gladys calcula a partir de él el consumo y su coste.
+Los tipos que no tienen equivalente en Gladys (`media_player`, `camera`, `date`…) simplemente se omiten en la búsqueda. Un sensor `energy` (en kWh o Wh) es un índice acumulado: Gladys calcula a partir de él el consumo y su coste.
 
 ### Luces, persianas, sensores de apertura y de cerradura
 

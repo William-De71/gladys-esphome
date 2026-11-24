@@ -23,10 +23,11 @@ Anders als ein Gerät von der Stange stellt ein ESPHome-Knoten genau das bereit,
 | `valve`            | Ventil: offen / geschlossen                                                                    |
 | `button`           | Taster                                                                                         |
 | `number`           | Beschreibbarer Zahlenwert (Schieberegler)                                                      |
+| `select`           | In der YAML angegebene Auswahlliste (`options:`): einen Eintrag wählen                         |
 | `climate`          | Thermostat oder Klimaanlage: Sollwert, gemessene Temperatur, Ein/Aus, Modus, Lüfter, Schwenken |
 | `event`            | Keine Funktion: der Szenen-Auslöser „ESPHome-Ereignis“                                         |
 
-Typen ohne Entsprechung in Gladys (`media_player`, `camera`, `select`, `date`, …) werden bei der Suche einfach ausgelassen. Ein `energy`-Sensor (in kWh oder Wh) ist ein kumulativer Zählerstand: Gladys berechnet daraus den Verbrauch und seine Kosten.
+Typen ohne Entsprechung in Gladys (`media_player`, `camera`, `date`, …) werden bei der Suche einfach ausgelassen. Ein `energy`-Sensor (in kWh oder Wh) ist ein kumulativer Zählerstand: Gladys berechnet daraus den Verbrauch und seine Kosten.
 
 ### Lampen, Rollläden, Tür- und Schlosssensoren
 

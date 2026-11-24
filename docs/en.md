@@ -23,10 +23,11 @@ Unlike an off-the-shelf device, an ESPHome node exposes exactly what **you** dec
 | `valve`           | Valve: open / closed                                                                   |
 | `button`          | Push button                                                                            |
 | `number`          | Writable numeric setting (slider)                                                      |
+| `select`          | List of choices declared in the YAML (`options:`): pick one                            |
 | `climate`         | Thermostat or air conditioner: setpoint, measured temperature, power, mode, fan, swing |
 | `event`           | No feature: the scene trigger "ESPHome event"                                          |
 
-Types Gladys has no equivalent for (`media_player`, `camera`, `select`, `date`…) are simply left out of discovery. An `energy` sensor (in kWh or Wh) is a cumulative index: Gladys computes the consumption and its cost from it.
+Types Gladys has no equivalent for (`media_player`, `camera`, `date`…) are simply left out of discovery. An `energy` sensor (in kWh or Wh) is a cumulative index: Gladys computes the consumption and its cost from it.
 
 ### Lights, covers, door and lock sensors
 

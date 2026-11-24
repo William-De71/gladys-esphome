@@ -145,6 +145,17 @@ test('a text state uses the dedicated Gladys text shape', () => {
   assert.deepEqual(value, { text: 'idle' });
 });
 
+test('a select reads and writes the option string itself', () => {
+  // ESPHome SelectStateResponse.state / SelectCommandRequest.state: the option
+  // string. Gladys: `{ text }` as the state, the option value as the command.
+  const [feature] = describeEntity({ type: 'select', options: ['Low', 'High'] });
+  assert.deepEqual(readState(feature, { type: 'select', key: 9, state: 'High' }), { text: 'High' });
+  // No option chosen yet travels as '' (protobuf default): nothing to show.
+  assert.equal(readState(feature, { type: 'select', key: 9 }), undefined);
+  assert.equal(readState(feature, { type: 'select', key: 9, missingState: true }), undefined);
+  assert.deepEqual(writeCommand(feature, 'Low'), { state: 'Low' });
+});
+
 test('the ESPHome 0..1 scale becomes the Gladys 0..100 one, and back', () => {
   assert.equal(ratioToPercent(0.5), 50);
   assert.equal(percentToRatio(50), 0.5);

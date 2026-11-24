@@ -16,7 +16,7 @@ External [Gladys Assistant](https://gladysassistant.com) integration for **ESPHo
 ## Features
 
 - **Automatic discovery**: Gladys captures the mDNS announces of the nodes; nothing to type, even when a DHCP lease moves.
-- **Every common entity**: sensors, binary sensors, switches, lights, covers, fans, locks, sirens, valves, buttons, numbers, texts thermostats and air conditioners (table below).
+- **Every common entity**: sensors, binary sensors, switches, lights, covers, fans, locks, sirens, valves, buttons, numbers, selects, texts, thermostats and air conditioners (table below).
 - **Real time**: nodes push their changes over a session kept open; only the values that changed are sent to Gladys.
 - **Scenes**: start a scene when an ESPHome `event` fires (a double click, a doorbell) or when a node goes offline, and run the actions declared in a node's YAML (`api: actions:`) from a scene.
 - **Resilient**: a node that was off when Gladys started, or that the scan missed, is reconnected on its own; the API slots of each node are spared.
@@ -78,10 +78,11 @@ sequenceDiagram
 | `valve`         | Open / closed                                                              |
 | `button`        | Push                                                                       |
 | `number`        | Writable value bounded by the YAML `min_value` / `max_value`               |
+| `select`        | Choice among the YAML `options:`                                           |
 | `climate`       | Setpoint, current temperature, power, mode, fan, swing (air conditioning)  |
 | `event`         | No feature: the scene trigger "ESPHome event"                              |
 
-Entity types with no Gladys equivalent (`media_player`, `camera`, `select`, `date`, …) are left out of discovery rather than mapped to something that could not work. An `energy` sensor in kWh or Wh is a cumulative index: Gladys derives the consumption and its cost from it.
+Entity types with no Gladys equivalent (`media_player`, `camera`, `date`, …) are left out of discovery rather than mapped to something that could not work. An `energy` sensor in kWh or Wh is a cumulative index: Gladys derives the consumption and its cost from it.
 
 ### From YAML to Gladys
 

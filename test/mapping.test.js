@@ -197,6 +197,26 @@ test('only node buttons and entities disabled by default are hidden from discove
   assert.equal(isHiddenByDefault({ type: 'switch', disabledByDefault: true }), true);
 });
 
+test('a select becomes a Gladys text/select with the options of the YAML', () => {
+  // ESPHome `select`: a list of strings declared in the YAML (`options:`).
+  // Gladys `text/select`: string supported_options { value, label }, no history.
+  const [feature] = describeEntity({
+    type: 'select',
+    options: ['Normal', 'Engineering mode'],
+  });
+  assert.equal(feature.category, DEVICE_FEATURE_CATEGORIES.TEXT);
+  assert.equal(feature.type, DEVICE_FEATURE_TYPES.TEXT.SELECT);
+  assert.equal(feature.readOnly, false);
+  assert.equal(feature.keepHistory, false);
+  assert.deepEqual(feature.supportedOptions, [
+    { value: 'Normal', label: 'Normal' },
+    { value: 'Engineering mode', label: 'Engineering mode' },
+  ]);
+  // No option: nothing Gladys could ever command.
+  assert.deepEqual(describeEntity({ type: 'select', options: [] }), []);
+  assert.deepEqual(describeEntity({ type: 'select' }), []);
+});
+
 test('a cover only gets a position slider when it supports positioning', () => {
   assert.deepEqual(
     describeEntity({ type: 'cover' }).map((f) => f.key),
@@ -317,6 +337,7 @@ test('every category/type pair the mapping can emit exists in the Gladys front',
     'air-conditioning/swing-vertical',
     'air-conditioning/swing-horizontal',
     'text/text',
+    'text/select',
     'angle-sensor/integer',
     'counter-sensor/integer',
     'siren/binary',
@@ -350,6 +371,7 @@ test('every category/type pair the mapping can emit exists in the Gladys front',
       supportedFanModes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
       supportedSwingModes: [0, 1, 2, 3],
     },
+    { type: 'select', options: ['Low', 'High'] },
     { type: 'number' },
     { type: 'siren' },
     { type: 'valve' },

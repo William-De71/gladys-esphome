@@ -23,10 +23,11 @@ Contrairement à un appareil du commerce, un nœud ESPHome expose exactement ce 
 | `valve`           | Vanne : ouverte / fermée                                                                                  |
 | `button`          | Bouton poussoir                                                                                           |
 | `number`          | Réglage numérique modifiable (curseur)                                                                    |
+| `select`          | Liste de choix déclarée dans le YAML (`options:`) : en choisir un                                         |
 | `climate`         | Thermostat ou climatisation : consigne, température mesurée, marche/arrêt, mode, ventilation, oscillation |
 | `event`           | Aucune fonctionnalité : le déclencheur de scène « Événement ESPHome »                                     |
 
-Les types qui n'ont pas d'équivalent dans Gladys (`media_player`, `camera`, `select`, `date`...) sont simplement ignorés lors de la découverte. Un capteur `energy` (en kWh ou en Wh) est un index cumulé : Gladys en calcule la consommation et son coût.
+Les types qui n'ont pas d'équivalent dans Gladys (`media_player`, `camera`, `date`...) sont simplement ignorés lors de la découverte. Un capteur `energy` (en kWh ou en Wh) est un index cumulé : Gladys en calcule la consommation et son coût.
 
 ### Lumières, volets, capteurs d'ouverture et de serrure
 

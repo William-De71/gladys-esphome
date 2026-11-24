@@ -611,8 +611,32 @@ export function describeEntity(entity) {
         },
       ];
 
+    case 'select': {
+      // An ESPHome `select` is a list that only exists on the node (an LD2410
+      // setting, a Tuya MCU mode…): exactly what the Gladys `text/select` type
+      // is for. The options are the strings of the YAML, sent back as is.
+      const options = Array.isArray(entity.options) ? entity.options.map(String) : [];
+      if (options.length === 0) {
+        // Nothing to choose from: a select Gladys could never command.
+        return [];
+      }
+      return [
+        {
+          key: 'state',
+          readOnly: false,
+          // The core keeps no history for a select (stored as a string).
+          keepHistory: false,
+          category: DEVICE_FEATURE_CATEGORIES.TEXT,
+          type: TEXT.SELECT,
+          min: 0,
+          max: 0,
+          supportedOptions: options.map((option) => ({ value: option, label: option })),
+        },
+      ];
+    }
+
     default:
-      // Entity types Gladys has no equivalent for (media_player, select, date,
+      // Entity types Gladys has no equivalent for (media_player, date,
       // camera, event…). Returning nothing keeps them out of the discovery
       // list rather than creating a feature that could never work.
       return [];

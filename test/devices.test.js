@@ -156,6 +156,25 @@ const NODE_BUTTONS = [
   },
 ];
 
+test('a select publishes its options as the supported_options of its feature', () => {
+  const device = buildDevice(fakeGladys(), { name: 'salon', host: '192.168.1.42' }, [
+    {
+      id: 'select-distance',
+      type: 'select',
+      name: 'Distance resolution',
+      objectId: 'distance',
+      options: ['0.2m', '0.75m'],
+    },
+  ]);
+  const [feature] = device.features;
+  assert.equal(feature.external_id, 'ext:ext-dev-esphome:esphome:salon:select-distance:state');
+  assert.equal(feature.type, 'select');
+  assert.deepEqual(feature.supported_options, [
+    { value: '0.2m', label: '0.2m' },
+    { value: '0.75m', label: '0.75m' },
+  ]);
+});
+
 test('a new device leaves out the node buttons and the entities disabled by default', () => {
   // Home Assistant files restart / factory reset apart and does not enable a
   // `disabled_by_default` entity; Gladys cannot set a feature aside, so they
