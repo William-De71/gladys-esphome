@@ -35,6 +35,12 @@ Los tipos que no tienen equivalente en Gladys (`media_player`, `camera`, `select
 - **Sensores binarios `lock`**: ESPHome envía `ON` cuando está desbloqueado, Gladys muestra «Desbloqueado».
 - **Persianas**: Gladys muestra abierta, cerrada o detenida (parada a medio recorrido). Durante el movimiento se muestra la dirección.
 
+### Diagnóstico de los nodos
+
+- **Temperatura del propio nodo** (`internal_temperature`, o cualquier temperatura que ESPHome clasifique como diagnóstico): aparece como **Sensor de temperatura del dispositivo** y ya no cuenta en la temperatura de la habitación. Un dispositivo ya añadido en Gladys la recibe tras pulsar **Actualizar** en el descubrimiento ESPHome. El historial se conserva.
+- **Botones del nodo** (`restart`, `safe_mode`, `factory_reset`, `shutdown`) y entidades marcadas `disabled_by_default: true` en el YAML: ya no se proponen en los dispositivos nuevos, como en Home Assistant. Los que ya añadió se mantienen, junto con las escenas que los usan.
+- Las medidas de diagnóstico (señal Wi-Fi, tiempo de funcionamiento, versión…) siguen disponibles.
+
 ### Aire acondicionado (`climate`)
 
 Una entidad `climate` conserva su consigna (una sola) y su temperatura medida, y recibe además los controles de la categoría **Aire acondicionado** de Gladys, cada uno solo si el firmware lo declara:

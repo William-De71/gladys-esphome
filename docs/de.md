@@ -35,6 +35,12 @@ Typen ohne Entsprechung in Gladys (`media_player`, `camera`, `select`, `date`, �
 - **`lock`-Binärsensoren**: ESPHome meldet `ON`, wenn entriegelt, Gladys zeigt „Entriegelt“ an.
 - **Rollläden**: Gladys zeigt offen, geschlossen oder gestoppt (auf halbem Weg angehalten). Während der Bewegung wird die Richtung angezeigt.
 
+### Knotendiagnose
+
+- **Temperatur des Knotens selbst** (`internal_temperature` oder jede Temperatur, die ESPHome als Diagnose einstuft): Sie erscheint als **Gerätetemperatursensor** und zählt nicht mehr zur Raumtemperatur. Ein bereits in Gladys hinzugefügtes Gerät erhält sie nach einem Klick auf **Aktualisieren** in der ESPHome-Erkennung. Der Verlauf bleibt erhalten.
+- **Knotentasten** (`restart`, `safe_mode`, `factory_reset`, `shutdown`) und Entitäten mit `disabled_by_default: true` in der YAML werden bei neuen Geräten nicht mehr angeboten, wie in Home Assistant. Bereits hinzugefügte bleiben, ebenso die Szenen, die sie verwenden.
+- Diagnosewerte (WLAN-Signal, Betriebszeit, Version…) bleiben verfügbar.
+
 ### Klimaanlage (`climate`)
 
 Eine `climate`-Entität behält ihren Sollwert (einen einzigen) und ihre gemessene Temperatur und erhält zusätzlich die Steuerungen der Gladys-Kategorie **Klimaanlage**, jede nur, wenn die Firmware sie meldet:

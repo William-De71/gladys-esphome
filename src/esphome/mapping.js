@@ -30,6 +30,7 @@ import {
   DEVICE_FEATURE_TYPES,
   DEVICE_FEATURE_UNITS,
 } from '@gladysassistant/integration-sdk';
+import { EntityCategory } from 'esphome-client';
 import { describeClimateControls } from './climate.js';
 
 const { SENSOR, SWITCH, LIGHT, SHUTTER, BUTTON, THERMOSTAT, TEXT } = DEVICE_FEATURE_TYPES;
@@ -358,6 +359,21 @@ export function mapSensor(entity) {
       max: 1000000,
     };
   }
+  if (isDeviceTemperature(entity, known, unit)) {
+    // The temperature of the node itself (`internal_temperature`, the chip of
+    // an mmWave sensor…), which ESPHome flags as a diagnostic. Under
+    // `temperature-sensor` the 45-60 °C of an ESP32 entered the room
+    // temperature, which the core averages over that category; Gladys keeps
+    // `device-temperature-sensor` for exactly this. Same external id, so a
+    // feature already created moves there on "Update", history included.
+    return {
+      category: DEVICE_FEATURE_CATEGORIES.DEVICE_TEMPERATURE_SENSOR,
+      type: SENSOR.DECIMAL,
+      unit,
+      min: known.min,
+      max: known.max,
+    };
+  }
   return {
     category: known.category,
     // Most sensor categories carry the decimal type; the electrical ones name
@@ -367,6 +383,49 @@ export function mapSensor(entity) {
     min: known.min,
     max: known.max,
   };
+}
+
+/**
+ * Whether a temperature sensor measures the node rather than the room.
+ * @param {object} entity - The ESPHome sensor entity (`entityCategory`).
+ * @param {object} known - Its SENSOR_CLASSES entry.
+ * @param {string|undefined} unit - Its Gladys unit.
+ * @returns {boolean} True for a diagnostic temperature Gladys can file apart.
+ */
+function isDeviceTemperature(entity, known, unit) {
+  return (
+    known.category === DEVICE_FEATURE_CATEGORIES.TEMPERATURE_SENSOR &&
+    entity.entityCategory === EntityCategory.DIAGNOSTIC &&
+    // device-temperature-sensor only accepts °C and °F in the core.
+    unit !== DEVICE_FEATURE_UNITS.KELVIN
+  );
+}
+
+/**
+ * Whether discovery leaves an entity out of a NEW device, as Home Assistant
+ * leaves it out of its dashboards:
+ *   - `disabled_by_default: true` in the YAML: the author asked for it;
+ *   - a button filed as configuration or diagnostic (`restart`, `safe_mode`,
+ *     `factory_reset`, `shutdown`): Gladys cannot set a feature aside, and a
+ *     factory reset one tap away next to the real buttons is a trap.
+ * Diagnostic READINGS (Wi-Fi signal, uptime, version…) stay: they are harmless
+ * and useful. A feature the user already created is kept regardless (see
+ * buildDevice): dropping it would delete it, and the scenes using it, on the
+ * next "Update".
+ * @param {object} entity - The ESPHome entity.
+ * @returns {boolean} True to leave it out of discovery.
+ * @example
+ * isHiddenByDefault({ type: 'button', entityCategory: 1 }); // true
+ */
+export function isHiddenByDefault(entity) {
+  if (entity.disabledByDefault === true) {
+    return true;
+  }
+  return (
+    entity.type === 'button' &&
+    (entity.entityCategory === EntityCategory.CONFIG ||
+      entity.entityCategory === EntityCategory.DIAGNOSTIC)
+  );
 }
 
 /**

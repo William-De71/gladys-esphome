@@ -1,8 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { DEVICE_FEATURE_CATEGORIES, DEVICE_FEATURE_TYPES } from '@gladysassistant/integration-sdk';
-import { describeEntity, mapSensor, mapBinarySensor, mapUnit } from '../src/esphome/mapping.js';
+import {
+  DEVICE_FEATURE_CATEGORIES,
+  DEVICE_FEATURE_TYPES,
+  DEVICE_FEATURE_UNITS,
+} from '@gladysassistant/integration-sdk';
+import {
+  describeEntity,
+  mapSensor,
+  mapBinarySensor,
+  mapUnit,
+  isHiddenByDefault,
+} from '../src/esphome/mapping.js';
 
 test('a numeric sensor maps to its Gladys category through its device_class', () => {
   const feature = mapSensor({ deviceClass: 'temperature', unitOfMeasurement: '°C' });
@@ -152,6 +162,41 @@ test('a cold/warm white light gets a color temperature when its YAML gives the r
   );
 });
 
+test('the temperature of the node itself is not a room temperature', () => {
+  // ESPHome flags `internal_temperature` (an ESP32 at 45-60 °C) as a
+  // diagnostic (entityCategory 2). Under temperature-sensor it entered the room
+  // temperature the core averages; Gladys files it as device-temperature-sensor.
+  const internal = mapSensor({
+    deviceClass: 'temperature',
+    unitOfMeasurement: '°C',
+    entityCategory: 2,
+  });
+  assert.equal(internal.category, DEVICE_FEATURE_CATEGORIES.DEVICE_TEMPERATURE_SENSOR);
+  assert.equal(internal.type, DEVICE_FEATURE_TYPES.SENSOR.DECIMAL);
+  assert.equal(internal.unit, DEVICE_FEATURE_UNITS.CELSIUS);
+
+  // A room probe (no category), and a diagnostic in kelvin, which the
+  // device-temperature-sensor category does not accept, stay where they were.
+  const room = mapSensor({ deviceClass: 'temperature', unitOfMeasurement: '°C' });
+  assert.equal(room.category, DEVICE_FEATURE_CATEGORIES.TEMPERATURE_SENSOR);
+  const kelvin = mapSensor({
+    deviceClass: 'temperature',
+    unitOfMeasurement: 'K',
+    entityCategory: 2,
+  });
+  assert.equal(kelvin.category, DEVICE_FEATURE_CATEGORIES.TEMPERATURE_SENSOR);
+});
+
+test('only node buttons and entities disabled by default are hidden from discovery', () => {
+  // ESPHome EntityCategory: 0 none, 1 config, 2 diagnostic.
+  assert.equal(isHiddenByDefault({ type: 'button', entityCategory: 1 }), true);
+  assert.equal(isHiddenByDefault({ type: 'button', entityCategory: 2 }), true);
+  assert.equal(isHiddenByDefault({ type: 'button' }), false);
+  assert.equal(isHiddenByDefault({ type: 'sensor', entityCategory: 2 }), false);
+  assert.equal(isHiddenByDefault({ type: 'switch', entityCategory: 1 }), false);
+  assert.equal(isHiddenByDefault({ type: 'switch', disabledByDefault: true }), true);
+});
+
 test('a cover only gets a position slider when it supports positioning', () => {
   assert.deepEqual(
     describeEntity({ type: 'cover' }).map((f) => f.key),
@@ -220,6 +265,7 @@ test('every category/type pair the mapping can emit exists in the Gladys front',
   // against the list verified against the core at the time of writing.
   const allowed = new Set([
     'temperature-sensor/decimal',
+    'device-temperature-sensor/decimal',
     'humidity-sensor/decimal',
     'pressure-sensor/decimal',
     'light-sensor/decimal',
@@ -280,6 +326,7 @@ test('every category/type pair the mapping can emit exists in the Gladys front',
   // Exercise the mapping across every branch it can take.
   const entities = [
     ...Object.keys(SENSOR_DEVICE_CLASSES).map((deviceClass) => ({ type: 'sensor', deviceClass })),
+    { type: 'sensor', deviceClass: 'temperature', entityCategory: 2 },
     { type: 'sensor' },
     { type: 'sensor', unitOfMeasurement: '°', accuracyDecimals: 1 },
     { type: 'sensor', accuracyDecimals: 0 },

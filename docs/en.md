@@ -35,6 +35,12 @@ Types Gladys has no equivalent for (`media_player`, `camera`, `select`, `date`â€
 - **`lock` binary sensors**: ESPHome reports `ON` when unlocked, Gladys shows "Unlocked".
 - **Covers**: Gladys shows open, closed, or stopped (a cover stopped part way). While it moves, its direction is shown.
 
+### Node diagnostics
+
+- **Temperature of the node itself** (`internal_temperature`, or any temperature ESPHome files as a diagnostic): it shows as **Device temperature sensor**, so it no longer counts in the room temperature. A device already added to Gladys gets it after clicking **Update** in the ESPHome discovery. The history is kept.
+- **Node buttons** (`restart`, `safe_mode`, `factory_reset`, `shutdown`) and entities marked `disabled_by_default: true` in the YAML are no longer offered on new devices, as in Home Assistant. Those you already added stay, along with the scenes using them.
+- Diagnostic readings (Wi-Fi signal, uptime, versionâ€¦) stay available.
+
 ### Air conditioning (`climate`)
 
 A `climate` entity keeps its setpoint (a single one) and its measured temperature, and also gets the controls of the Gladys **Air conditioning** category, each one only when the firmware declares it:

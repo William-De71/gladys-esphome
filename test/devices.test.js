@@ -127,6 +127,64 @@ test('a device carries one feature per usable entity dimension', () => {
   assert.ok(device.params.some((p) => p.name === 'ADDRESS' && p.value === '192.168.1.42:6053'));
 });
 
+// ESPHome EntityCategory (api.proto): 0 none, 1 config, 2 diagnostic.
+const NODE_BUTTONS = [
+  { id: 'button-restart', type: 'button', name: 'Restart', objectId: 'restart', entityCategory: 1 },
+  {
+    id: 'button-factory_reset',
+    type: 'button',
+    name: 'Factory reset',
+    objectId: 'factory_reset',
+    entityCategory: 1,
+  },
+  { id: 'button-doorbell', type: 'button', name: 'Doorbell', objectId: 'doorbell' },
+  {
+    id: 'sensor-hidden',
+    type: 'sensor',
+    name: 'Hidden',
+    objectId: 'hidden',
+    deviceClass: 'temperature',
+    disabledByDefault: true,
+  },
+  {
+    id: 'sensor-wifi_signal',
+    type: 'sensor',
+    name: 'WiFi Signal',
+    objectId: 'wifi_signal',
+    deviceClass: 'signal_strength',
+    entityCategory: 2,
+  },
+];
+
+test('a new device leaves out the node buttons and the entities disabled by default', () => {
+  // Home Assistant files restart / factory reset apart and does not enable a
+  // `disabled_by_default` entity; Gladys cannot set a feature aside, so they
+  // are not offered. Diagnostic readings (Wi-Fi signal) stay.
+  const device = buildDevice(fakeGladys(), { name: 'salon', host: '192.168.1.42' }, NODE_BUTTONS);
+  assert.deepEqual(
+    device.features.map((f) => f.external_id),
+    [
+      'ext:ext-dev-esphome:esphome:salon:button-doorbell:press',
+      'ext:ext-dev-esphome:esphome:salon:sensor-wifi_signal:state',
+    ],
+  );
+});
+
+test('a node button the user already created is kept, so "Update" does not delete it', () => {
+  // The core deletes every feature missing from the device it receives, and
+  // the scenes pressing it with it.
+  const restart = 'ext:ext-dev-esphome:esphome:salon:button-restart:press';
+  const gladys = fakeGladys({
+    devices: [
+      { external_id: 'ext:ext-dev-esphome:esphome:salon', features: [{ external_id: restart }] },
+    ],
+  });
+  const device = buildDevice(gladys, { name: 'salon', host: '192.168.1.42' }, NODE_BUTTONS);
+  const ids = device.features.map((f) => f.external_id);
+  assert.ok(ids.includes(restart));
+  assert.ok(!ids.includes('ext:ext-dev-esphome:esphome:salon:button-factory_reset:press'));
+});
+
 test('a pushed state reaches only the features the user actually created', async () => {
   // The core rejects a state addressed to an unknown external id.
   const deviceExternalId = 'ext:ext-dev-esphome:esphome:salon';

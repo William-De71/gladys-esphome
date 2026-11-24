@@ -35,6 +35,12 @@ Les types qui n'ont pas d'équivalent dans Gladys (`media_player`, `camera`, `se
 - **Capteurs binaires `lock`** : ESPHome envoie `ON` quand c'est déverrouillé, Gladys affiche « Déverrouillé ».
 - **Volets** : Gladys affiche ouvert, fermé, ou arrêté (volet arrêté à mi-course). Pendant le mouvement, c'est le sens qui est affiché.
 
+### Diagnostic des nœuds
+
+- **Température du nœud lui-même** (`internal_temperature`, ou toute température qu'ESPHome classe en diagnostic) : elle apparaît comme **Température de l'appareil** et ne compte plus dans la température de la pièce. Un appareil déjà ajouté dans Gladys la reçoit après un clic sur **Mettre à jour** dans la découverte ESPHome. L'historique est conservé.
+- **Boutons du nœud** (`restart`, `safe_mode`, `factory_reset`, `shutdown`) et entités marquées `disabled_by_default: true` dans le YAML : ils ne sont plus proposés sur les nouveaux appareils, comme dans Home Assistant. Ceux que vous avez déjà ajoutés restent, avec les scènes qui les utilisent.
+- Les mesures de diagnostic (signal Wi-Fi, durée de fonctionnement, version…) restent disponibles.
+
 ### Climatisation (`climate`)
 
 Une entité `climate` garde sa consigne (une seule) et sa température mesurée, et reçoit en plus les commandes de la catégorie **Climatisation** de Gladys, chacune seulement si le firmware la déclare :

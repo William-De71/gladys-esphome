@@ -10,7 +10,7 @@
 // -----------------------------------------------------------------------------
 
 import { createLogger, DEVICE_TRANSPORTS } from '@gladysassistant/integration-sdk';
-import { describeEntity } from './esphome/mapping.js';
+import { describeEntity, isHiddenByDefault } from './esphome/mapping.js';
 import {
   readState,
   writeCommand,
@@ -345,8 +345,21 @@ export function buildDevice(gladys, node, entities, info = {}) {
   const ids = gladys.externalIds(EXTERNAL_ID_TYPE, node.name);
   const features = [];
 
+  // The features the user already created on this node: an entity hidden by
+  // default keeps them, since a feature missing from the discovered device is
+  // deleted by the core on "Update" (with the scenes using it).
+  const created = (gladys.devices || []).find((device) => device.external_id === ids.device);
+  const createdIds = new Set(((created && created.features) || []).map((f) => f.external_id));
+
   entities.forEach((entity) => {
-    describeEntity(entity).forEach((descriptor) => {
+    const descriptors = describeEntity(entity);
+    if (
+      isHiddenByDefault(entity) &&
+      !descriptors.some((d) => createdIds.has(ids.feature(`${entity.id}:${d.key}`)))
+    ) {
+      return;
+    }
+    descriptors.forEach((descriptor) => {
       features.push({
         // The entity name is the one the user wrote in their YAML — the most
         // meaningful label available. Several features of one entity are
